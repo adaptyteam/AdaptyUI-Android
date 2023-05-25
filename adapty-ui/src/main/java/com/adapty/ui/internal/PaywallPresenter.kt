@@ -16,7 +16,8 @@ import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyViewConfiguration
 import com.adapty.ui.AdaptyPaywallInsets
 import com.adapty.ui.AdaptyPaywallView
-import com.adapty.ui.AdaptyUI
+import com.adapty.ui.AdaptyUI.Event.Error
+import com.adapty.ui.AdaptyUI.Event.Restored
 import com.adapty.utils.AdaptyLogLevel.Companion.ERROR
 import com.adapty.utils.AdaptyLogLevel.Companion.VERBOSE
 import com.adapty.utils.AdaptyResult
@@ -123,14 +124,11 @@ internal class PaywallPresenter(
                     log(ERROR) { "$LOG_PREFIX_ERROR $flowKey makePurchase error: ${error.message}" }
                     when (error.adaptyErrorCode) {
                         AdaptyErrorCode.USER_CANCELED -> {
-                            paywallView.eventListener?.onPurchaseCanceled(paywallView)
+                            paywallView.eventListener?.onPurchaseCanceled(product, paywallView)
                         }
                         else -> {
                             paywallView.eventListener?.showAlert(
-                                AdaptyUI.Event.Error(
-                                    result.error,
-                                    AdaptyUI.Event.Error.Where.PURCHASE,
-                                ),
+                                Error.OnPurchase(result.error, product),
                                 paywallView,
                             )
                         }
@@ -149,17 +147,14 @@ internal class PaywallPresenter(
                 is AdaptyResult.Success -> {
                     log(VERBOSE) { "$LOG_PREFIX $flowKey restorePurchases success" }
                     paywallView.eventListener?.showAlert(
-                        AdaptyUI.Event.Restored(result.value),
+                        Restored(result.value),
                         paywallView,
                     )
                 }
                 is AdaptyResult.Error -> {
                     log(ERROR) { "$LOG_PREFIX_ERROR $flowKey restorePurchases error: ${result.error.message}" }
                     paywallView.eventListener?.showAlert(
-                        AdaptyUI.Event.Error(
-                            result.error,
-                            AdaptyUI.Event.Error.Where.RESTORE,
-                        ),
+                        Error.OnRestore(result.error),
                         paywallView,
                     )
                 }

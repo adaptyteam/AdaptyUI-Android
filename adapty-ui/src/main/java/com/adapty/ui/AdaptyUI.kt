@@ -42,13 +42,11 @@ public object AdaptyUI {
      *
      * @param[eventListener] An object that implements the [AdaptyUiEventListener] interface.
      * Use it to respond to different events happening inside the purchase screen.
-     * If you pass `null`, an [AdaptyUiDefaultEventListener] instance will be used.
      * Also you can extend [AdaptyUiDefaultEventListener] so you don't need to override all the methods.
      *
      * @return An [AdaptyPaywallView] object, representing the requested paywall screen.
      */
     @JvmStatic
-    @JvmOverloads
     @UiThread
     public fun getPaywallView(
         activity: Activity,
@@ -56,13 +54,13 @@ public object AdaptyUI {
         products: List<AdaptyPaywallProduct>?,
         viewConfiguration: AdaptyViewConfiguration,
         insets: AdaptyPaywallInsets,
-        eventListener: AdaptyUiEventListener? = null,
+        eventListener: AdaptyUiEventListener,
     ): AdaptyPaywallView {
         return AdaptyPaywallView(activity).apply {
             id = View.generateViewId()
             layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
 
-            eventListener?.let(::setEventListener)
+            setEventListener(eventListener)
             showPaywall(
                 paywall,
                 products,
@@ -81,8 +79,9 @@ public object AdaptyUI {
         /**
          * This event occurs when an error is happened.
          */
-        public class Error(public val error: AdaptyError, public val where: Where) : Event() {
-            public enum class Where { PURCHASE, RESTORE }
+        public sealed class Error(public val error: AdaptyError) : Event() {
+            public class OnRestore(error: AdaptyError) : Error(error)
+            public class OnPurchase(error: AdaptyError, public val product: AdaptyPaywallProduct) : Error(error)
         }
     }
 }

@@ -13,7 +13,10 @@ import com.adapty.internal.utils.adaptyError
 import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyViewConfiguration
-import com.adapty.ui.internal.*
+import com.adapty.ui.internal.LOG_PREFIX
+import com.adapty.ui.internal.LOG_PREFIX_ERROR
+import com.adapty.ui.internal.PaywallPresenterFactory
+import com.adapty.ui.internal.log
 import com.adapty.ui.listeners.AdaptyUiDefaultEventListener
 import com.adapty.ui.listeners.AdaptyUiEventListener
 import com.adapty.utils.AdaptyLogLevel.Companion.ERROR
@@ -33,12 +36,13 @@ public class AdaptyPaywallView @JvmOverloads constructor(
 
     @get:JvmSynthetic @set:JvmSynthetic
     internal var eventListener: AdaptyUiEventListener? = null
+        get() = if (isAttachedToWindow) field else null
 
     /**
      * Use it to respond to different events happening inside the purchase screen.
      *
-     * If the [AdaptyPaywallView] has been created by calling [AdaptyUI.getPaywallView] and
-     * the [AdaptyUiEventListener] has been passed as a parameter, calling this method is unnecessary.
+     * If the [AdaptyPaywallView] has been created by calling [AdaptyUI.getPaywallView],
+     * calling this method is unnecessary.
      *
      * @param[listener] An object that implements the [AdaptyUiEventListener] interface.
      * Also you can extend [AdaptyUiDefaultEventListener] so you don't need to override all the methods.
@@ -102,14 +106,10 @@ public class AdaptyPaywallView @JvmOverloads constructor(
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         log(VERBOSE) { "$LOG_PREFIX $flowKey onAttachedToWindow" }
-        if (eventListener == null) {
-            eventListener = AdaptyUiDefaultEventListener()
-        }
     }
 
     override fun onDetachedFromWindow() {
         clearOldPaywall()
-        clearListeners()
         log(VERBOSE) { "$LOG_PREFIX $flowKey onDetachedFromWindow" }
         super.onDetachedFromWindow()
     }
@@ -117,10 +117,6 @@ public class AdaptyPaywallView @JvmOverloads constructor(
     private fun clearOldPaywall() {
         presenter.clearOldPaywall()
         removeAllViews()
-    }
-
-    private fun clearListeners() {
-        eventListener = null
     }
 
     private fun onRenderingError(e: Exception) {

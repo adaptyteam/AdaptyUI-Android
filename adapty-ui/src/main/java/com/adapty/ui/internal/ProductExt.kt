@@ -4,8 +4,6 @@ import android.graphics.Paint
 import com.adapty.models.AdaptyEligibility.ELIGIBLE
 import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyPeriodUnit.*
-import java.math.BigDecimal
-import java.math.MathContext
 import java.math.RoundingMode
 
 internal fun AdaptyPaywallProduct.hasDiscount(): Boolean =
@@ -29,19 +27,28 @@ internal fun AdaptyPaywallProduct.createDiscountText(paint: Paint): String? {
 internal fun AdaptyPaywallProduct.canConvertPriceToWeekly(): Boolean =
     subscriptionPeriod?.unit in listOf(YEAR, MONTH, WEEK)
 
-internal fun AdaptyPaywallProduct.createPricePerWeekText(paint: Paint): String? =
-    when (subscriptionPeriod?.unit) {
-        WEEK -> localizedPrice
-        !in listOf(YEAR, MONTH) -> null
+internal fun AdaptyPaywallProduct.createPricePerWeekText(paint: Paint): String? {
+    val unit = subscriptionPeriod?.unit?.takeIf { it in listOf(WEEK, YEAR, MONTH) } ?: return null
+    val numberOfUnits = subscriptionPeriod?.numberOfUnits?.takeIf { it > 0 } ?: return null
+
+    return when {
+        unit == WEEK && numberOfUnits == 1 -> localizedPrice
         else -> {
-            val divisor = when (subscriptionPeriod?.unit) {
-                YEAR -> 360L
-                else -> 30L
+            val pricePerWeek = when (unit) {
+                WEEK -> price.divide(numberOfUnits.toBigDecimal(), 4, RoundingMode.CEILING)
+                else -> {
+                    val divisor = (when (unit) {
+                        YEAR -> 365
+                        else -> 30
+                    } * numberOfUnits).toBigDecimal()
+
+                    price.divide(divisor, 4, RoundingMode.CEILING) * 7.toBigDecimal()
+                }
             }
+
             val pricePerWeekString =
-                price.divide(BigDecimal.valueOf(divisor), MathContext.DECIMAL128)
-                    .multiply(BigDecimal.valueOf(7L)).setScale(2, RoundingMode.HALF_UP)
-                    .stripTrailingZeros()
+                pricePerWeek
+                    .setScale(2, RoundingMode.CEILING)
                     .toPlainString()
             var startIndex = -1
             var endIndex = -1
@@ -65,6 +72,7 @@ internal fun AdaptyPaywallProduct.createPricePerWeekText(paint: Paint): String? 
 
         "${createTextFromLocalizedPrice(firstPart, paint)}/$secondPart"
     }
+}
 
 internal fun AdaptyPaywallProduct.createTextFromLocalizedPrice(
     localizedPrice: String,

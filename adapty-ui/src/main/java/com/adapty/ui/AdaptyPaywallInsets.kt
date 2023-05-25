@@ -22,4 +22,24 @@ public class AdaptyPaywallInsets private constructor(
         @JvmField
         public val NONE: AdaptyPaywallInsets = of(top = 0, bottom = 0)
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AdaptyPaywallInsets) return false
+
+        if (top != other.top) return false
+        if (bottom != other.bottom) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = top
+        result = 31 * result + bottom
+        return result
+    }
+
+    override fun toString(): String {
+        return "AdaptyPaywallInsets(top=$top, bottom=$bottom)"
+    }
 }

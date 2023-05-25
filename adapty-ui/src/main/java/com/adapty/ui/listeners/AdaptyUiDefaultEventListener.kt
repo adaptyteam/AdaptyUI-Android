@@ -11,6 +11,8 @@ import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyProfile
 import com.adapty.ui.AdaptyPaywallView
 import com.adapty.ui.AdaptyUI
+import com.adapty.ui.AdaptyUI.Event.Error
+import com.adapty.ui.AdaptyUI.Event.Restored
 
 public open class AdaptyUiDefaultEventListener : AdaptyUiEventListener {
 
@@ -23,10 +25,14 @@ public open class AdaptyUiDefaultEventListener : AdaptyUiEventListener {
         view: AdaptyPaywallView,
     ): Boolean = false
 
-    public override fun onPurchaseCanceled(view: AdaptyPaywallView) {}
+    public override fun onPurchaseCanceled(
+        product: AdaptyPaywallProduct,
+        view: AdaptyPaywallView,
+    ) {}
 
     public override fun onPurchaseFailure(
         error: AdaptyError,
+        product: AdaptyPaywallProduct,
         view: AdaptyPaywallView,
     ) {}
 
@@ -64,7 +70,7 @@ public open class AdaptyUiDefaultEventListener : AdaptyUiEventListener {
         view: AdaptyPaywallView,
     ) {
         when (event) {
-            is AdaptyUI.Event.Restored -> createDialog(
+            is Restored -> createDialog(
                 view.context,
                 null,
                 "Successfully restored purchases!",
@@ -72,7 +78,7 @@ public open class AdaptyUiDefaultEventListener : AdaptyUiEventListener {
                     doAfterAlert(event, view)
                 }
             ).show()
-            is AdaptyUI.Event.Error -> createDialog(
+            is Error -> createDialog(
                 view.context,
                 "Error Occured",
                 event.error.message.orEmpty(),
@@ -85,11 +91,9 @@ public open class AdaptyUiDefaultEventListener : AdaptyUiEventListener {
 
     public fun doAfterAlert(event: AdaptyUI.Event, view: AdaptyPaywallView) {
         when (event) {
-            is AdaptyUI.Event.Restored -> onRestoreSuccess(event.profile, view)
-            is AdaptyUI.Event.Error -> when (event.where) {
-                AdaptyUI.Event.Error.Where.PURCHASE -> onPurchaseFailure(event.error, view)
-                AdaptyUI.Event.Error.Where.RESTORE -> onRestoreFailure(event.error, view)
-            }
+            is Restored -> onRestoreSuccess(event.profile, view)
+            is Error.OnPurchase -> onPurchaseFailure(event.error, event.product, view)
+            is Error.OnRestore -> onRestoreFailure(event.error, view)
         }
     }
 

@@ -44,19 +44,24 @@ public interface AdaptyUiEventListener {
     /**
      * This callback is invoked when user cancels the purchase manually.
      *
+     * @param[product] An [AdaptyPaywallProduct] of the purchase.
+     *
      * @param[view] An [AdaptyPaywallView] within which the event occurred.
      */
-    public fun onPurchaseCanceled(view: AdaptyPaywallView)
+    public fun onPurchaseCanceled(product: AdaptyPaywallProduct, view: AdaptyPaywallView)
 
     /**
      * This callback is invoked when the purchase process fails.
      *
      * @param[error] An [AdaptyError] object representing the error.
      *
+     * @param[product] An [AdaptyPaywallProduct] of the purchase.
+     *
      * @param[view] An [AdaptyPaywallView] within which the event occurred.
      */
     public fun onPurchaseFailure(
         error: AdaptyError,
+        product: AdaptyPaywallProduct,
         view: AdaptyPaywallView,
     )
 
@@ -69,7 +74,7 @@ public interface AdaptyUiEventListener {
      *
      * @param[profile] An [AdaptyProfile] object containing up to date information about the user.
      *
-     * @param[product] An [AdaptyPaywallProduct] that has been purchased.
+     * @param[product] An [AdaptyPaywallProduct] of the purchase.
      *
      * @param[view] An [AdaptyPaywallView] within which the event occurred.
      */
