@@ -25,6 +25,11 @@ public open class AdaptyUiDefaultEventListener : AdaptyUiEventListener {
         view: AdaptyPaywallView,
     ): Boolean = false
 
+    override fun onProductSelected(
+        product: AdaptyPaywallProduct,
+        view: AdaptyPaywallView,
+    ) {}
+
     public override fun onPurchaseCanceled(
         product: AdaptyPaywallProduct,
         view: AdaptyPaywallView,
@@ -32,6 +37,11 @@ public open class AdaptyUiDefaultEventListener : AdaptyUiEventListener {
 
     public override fun onPurchaseFailure(
         error: AdaptyError,
+        product: AdaptyPaywallProduct,
+        view: AdaptyPaywallView,
+    ) {}
+
+    override fun onPurchaseStarted(
         product: AdaptyPaywallProduct,
         view: AdaptyPaywallView,
     ) {}

@@ -12,6 +12,7 @@ import com.adapty.models.AdaptyProfile
 import com.adapty.models.AdaptyViewConfiguration
 import com.adapty.ui.listeners.AdaptyUiDefaultEventListener
 import com.adapty.ui.listeners.AdaptyUiEventListener
+import com.adapty.ui.listeners.AdaptyUiProductTitleResolver
 
 public object AdaptyUI {
 
@@ -44,6 +45,10 @@ public object AdaptyUI {
      * Use it to respond to different events happening inside the purchase screen.
      * Also you can extend [AdaptyUiDefaultEventListener] so you don't need to override all the methods.
      *
+     * @param[productsTitleResolver] In case you want to override display names of the products,
+     * you can implement [AdaptyUiProductTitleResolver] and pass your own logic
+     * that maps [AdaptyPaywallProduct] to a display name.
+     *
      * @return An [AdaptyPaywallView] object, representing the requested paywall screen.
      */
     @JvmStatic
@@ -55,6 +60,7 @@ public object AdaptyUI {
         viewConfiguration: AdaptyViewConfiguration,
         insets: AdaptyPaywallInsets,
         eventListener: AdaptyUiEventListener,
+        productsTitleResolver: AdaptyUiProductTitleResolver = AdaptyUiProductTitleResolver.DEFAULT,
     ): AdaptyPaywallView {
         return AdaptyPaywallView(activity).apply {
             id = View.generateViewId()
@@ -66,6 +72,7 @@ public object AdaptyUI {
                 products,
                 viewConfiguration,
                 insets,
+                productsTitleResolver,
             )
         }
     }

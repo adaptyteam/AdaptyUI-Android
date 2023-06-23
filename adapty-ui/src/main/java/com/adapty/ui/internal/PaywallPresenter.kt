@@ -18,6 +18,7 @@ import com.adapty.ui.AdaptyPaywallInsets
 import com.adapty.ui.AdaptyPaywallView
 import com.adapty.ui.AdaptyUI.Event.Error
 import com.adapty.ui.AdaptyUI.Event.Restored
+import com.adapty.ui.listeners.AdaptyUiProductTitleResolver
 import com.adapty.utils.AdaptyLogLevel.Companion.ERROR
 import com.adapty.utils.AdaptyLogLevel.Companion.VERBOSE
 import com.adapty.utils.AdaptyResult
@@ -28,7 +29,7 @@ internal class PaywallPresenter(
     private val uiManager: PaywallUiManager,
 ) {
 
-    private var chosenProduct: AdaptyPaywallProduct? = null
+    private var selectedProduct: AdaptyPaywallProduct? = null
 
     private val handler by lazy(LazyThreadSafetyMode.NONE) {
         Handler(Looper.getMainLooper())
@@ -40,17 +41,19 @@ internal class PaywallPresenter(
         paywall: AdaptyPaywall,
         products: List<AdaptyPaywallProduct>?,
         insets: AdaptyPaywallInsets,
+        productTitleResolver: AdaptyUiProductTitleResolver,
     ) {
         checkViewContext(paywallView)
 
         val interactionListener = object : PaywallUiManager.InteractionListener {
-            override fun onProductChosen(product: AdaptyPaywallProduct) {
-                chosenProduct = product
+            override fun onProductSelected(product: AdaptyPaywallProduct) {
+                selectedProduct = product
                 log(VERBOSE) { "$LOG_PREFIX $flowKey select product: ${product.vendorProductId}" }
+                paywallView.eventListener?.onProductSelected(product, paywallView)
             }
 
             override fun onPurchaseButtonClicked() {
-                chosenProduct?.let { product ->
+                selectedProduct?.let { product ->
                     performMakePurchase(paywallView, product)
                 }
             }
@@ -75,10 +78,11 @@ internal class PaywallPresenter(
             products,
             insets,
             interactionListener,
+            productTitleResolver,
         )
 
         if (products.isNullOrEmpty()) {
-            loadProducts(paywall, viewConfig, paywallView, interactionListener)
+            loadProducts(paywall, viewConfig, paywallView, interactionListener, productTitleResolver)
         }
 
         log(VERBOSE) { "$LOG_PREFIX $flowKey logShowPaywall begin" }
@@ -94,7 +98,7 @@ internal class PaywallPresenter(
     fun clearOldPaywall() {
         handler.removeCallbacksAndMessages(null)
         uiManager.clearOldPaywall()
-        chosenProduct = null
+        selectedProduct = null
     }
 
     fun onSizeChanged(view: View, w: Int, h: Int) {
@@ -108,6 +112,7 @@ internal class PaywallPresenter(
         val activity = paywallView.context as? Activity ?: return
         uiManager.toggleLoadingView(true)
         log(VERBOSE) { "$LOG_PREFIX $flowKey makePurchase begin" }
+        paywallView.eventListener?.onPurchaseStarted(product, paywallView)
         Adapty.makePurchase(activity, product) { result ->
             uiManager.toggleLoadingView(false)
             when (result) {
@@ -167,13 +172,14 @@ internal class PaywallPresenter(
         viewConfig: AdaptyViewConfiguration,
         paywallView: AdaptyPaywallView,
         interactionListener: PaywallUiManager.InteractionListener,
+        productTitleResolver: AdaptyUiProductTitleResolver,
     ) {
         uiManager.toggleLoadingView(true)
         log(VERBOSE) { "$LOG_PREFIX $flowKey loadProducts begin" }
         Adapty.getPaywallProducts(paywall) { result ->
             when (result) {
                 is AdaptyResult.Success -> {
-                    uiManager.onProductsLoaded(result.value, viewConfig, interactionListener)
+                    uiManager.onProductsLoaded(result.value, viewConfig, interactionListener, productTitleResolver)
                     uiManager.toggleLoadingView(false)
                     log(VERBOSE) { "$LOG_PREFIX $flowKey loadProducts success" }
                 }
@@ -182,7 +188,7 @@ internal class PaywallPresenter(
                         paywallView.eventListener?.onLoadingProductsFailure(result.error, paywallView) ?: false
                     if (shouldRetry) {
                         handler.postDelayed({
-                            loadProducts(paywall, viewConfig, paywallView, interactionListener)
+                            loadProducts(paywall, viewConfig, paywallView, interactionListener, productTitleResolver)
                         }, LOADING_PRODUCTS_RETRY_DELAY)
                     } else {
                         uiManager.toggleLoadingView(false)

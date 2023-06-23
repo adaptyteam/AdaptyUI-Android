@@ -28,6 +28,7 @@ import com.adapty.models.AdaptyViewConfiguration.Component
 import com.adapty.ui.AdaptyPaywallInsets
 import com.adapty.ui.AdaptyPaywallView
 import com.adapty.ui.R
+import com.adapty.ui.listeners.AdaptyUiProductTitleResolver
 import com.adapty.utils.AdaptyLogLevel.Companion.VERBOSE
 import com.adapty.utils.AdaptyLogLevel.Companion.WARN
 import kotlin.math.min
@@ -60,6 +61,7 @@ internal class PaywallUiManager(
         products: List<AdaptyPaywallProduct>?,
         insets: AdaptyPaywallInsets,
         interactionListener: InteractionListener,
+        productTitleResolver: AdaptyUiProductTitleResolver,
     ) {
         val (screenWidth, screenHeight) = (paywallView.context as Activity).windowManager.getScreenSize()
 
@@ -191,7 +193,8 @@ internal class PaywallUiManager(
                                 product,
                                 i,
                                 constraintSet,
-                                interactionListener
+                                interactionListener,
+                                productTitleResolver,
                             )
                         }
                     }
@@ -391,6 +394,7 @@ internal class PaywallUiManager(
         products: List<AdaptyPaywallProduct>,
         viewConfig: AdaptyViewConfiguration,
         interactionListener: InteractionListener,
+        productTitleResolver: AdaptyUiProductTitleResolver,
     ) {
         val contentContainer = contentContainer ?: return
         val constraintSet = ConstraintSet().apply { clone(contentContainer) }
@@ -404,6 +408,7 @@ internal class PaywallUiManager(
                     i,
                     constraintSet,
                     interactionListener,
+                    productTitleResolver,
                 )
             } else {
                 productCell.visibility = View.GONE
@@ -432,11 +437,12 @@ internal class PaywallUiManager(
         productOrder: Int,
         constraintSet: ConstraintSet,
         interactionListener: InteractionListener,
+        productTitleResolver: AdaptyUiProductTitleResolver,
     ) {
         productCell.setOnClickListener {
             if (productCell.isSelected) return@setOnClickListener
             productCellViews.forEach { view -> view.isSelected = false }
-            interactionListener.onProductChosen(product)
+            interactionListener.onProductSelected(product)
             productCell.isSelected = true
         }
 
@@ -456,7 +462,7 @@ internal class PaywallUiManager(
                 ).value
             )
 
-            text = product.localizedTitle
+            text = productTitleResolver.resolve(product)
 
             resizeTextOnPreDrawIfNeeded(retainOriginalHeight = true)
         }.also { productTitleViewId = it.id }
@@ -518,7 +524,7 @@ internal class PaywallUiManager(
 
         var mainProductTagViewId: Int? = null
         if (productOrder == 0) {
-            interactionListener.onProductChosen(product)
+            interactionListener.onProductSelected(product)
             productCell.isSelected = true
 
             textView {
@@ -694,7 +700,7 @@ internal class PaywallUiManager(
     }
 
     interface InteractionListener {
-        fun onProductChosen(product: AdaptyPaywallProduct)
+        fun onProductSelected(product: AdaptyPaywallProduct)
         fun onPurchaseButtonClicked()
         fun onRestoreButtonClicked()
         fun onUrlClicked(url: String)

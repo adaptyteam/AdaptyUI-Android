@@ -42,6 +42,18 @@ public interface AdaptyUiEventListener {
     ): Boolean
 
     /**
+     * This callback is invoked when a product was selected for purchase (by user or by system).
+     *
+     * @param[product] An [AdaptyPaywallProduct] of the purchase.
+     *
+     * @param[view] An [AdaptyPaywallView] within which the event occurred.
+     */
+    public fun onProductSelected(
+        product: AdaptyPaywallProduct,
+        view: AdaptyPaywallView,
+    )
+
+    /**
      * This callback is invoked when user cancels the purchase manually.
      *
      * @param[product] An [AdaptyPaywallProduct] of the purchase.
@@ -61,6 +73,18 @@ public interface AdaptyUiEventListener {
      */
     public fun onPurchaseFailure(
         error: AdaptyError,
+        product: AdaptyPaywallProduct,
+        view: AdaptyPaywallView,
+    )
+
+    /**
+     * This callback is invoked when user initiates the purchase process.
+     *
+     * @param[product] An [AdaptyPaywallProduct] of the purchase.
+     *
+     * @param[view] An [AdaptyPaywallView] within which the event occurred.
+     */
+    public fun onPurchaseStarted(
         product: AdaptyPaywallProduct,
         view: AdaptyPaywallView,
     )
