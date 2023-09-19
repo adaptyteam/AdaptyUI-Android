@@ -96,7 +96,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
 
                                         errorView.text = ""
 
-                                        Adapty.getViewConfiguration(paywall) { configResult ->
+                                        Adapty.getViewConfiguration(paywall, "en") { configResult ->
                                             progressDialog.cancel()
                                             when (configResult) {
                                                 is AdaptyResult.Success -> {

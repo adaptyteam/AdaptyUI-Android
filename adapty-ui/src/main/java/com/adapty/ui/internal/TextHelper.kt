@@ -3,14 +3,71 @@ package com.adapty.ui.internal
 import android.os.Build
 import android.text.Layout
 import android.text.StaticLayout
+import android.util.TypedValue
+import android.view.Gravity
+import android.view.View
 import android.widget.TextView
 import androidx.annotation.RestrictTo
+import com.adapty.utils.AdaptyLogLevel
 import kotlin.math.ceil
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-internal class TextHelper {
+internal class TextHelper(
+    private val flowKey: String,
+) {
 
-    fun findBestScaledTextSize(text: CharSequence, textView: TextView, layout: Layout): Float {
+    fun resizeTextOnPreDrawIfNeeded(textView: TextView, retainOriginalHeight: Boolean, onHeightChanged: (() -> Unit)? = null) {
+        textView.addOnLayoutChangeListener(object: View.OnLayoutChangeListener {
+            private var lastWidth = 0
+            private var lastHeight = 0
+            private var lastTextLength = 0
+            private var retryLastCalculations = false
+            private var retryCounter = 0
+
+            override fun onLayoutChange(v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
+                val layout = textView.layout ?: return
+
+                if (lastHeight != textView.height) {
+                    lastHeight = textView.height
+                    if (retainOriginalHeight)
+                        textView.minHeight = lastHeight
+                }
+
+                if (lastWidth != textView.width || retryLastCalculations || lastTextLength != textView.text.length) {
+                    lastWidth = textView.width
+                    lastTextLength = textView.text.length
+                    try {
+                        if (!isTruncated(textView, layout))
+                            return
+
+                        textView.setTextSize(
+                            TypedValue.COMPLEX_UNIT_PX,
+                            findBestScaledTextSize(textView, layout),
+                        )
+                        if (!retainOriginalHeight)
+                            onHeightChanged?.invoke()
+                        else {
+                            textView.setVerticalGravity(Gravity.CENTER_VERTICAL)
+                        }
+
+                        retryLastCalculations = false
+                        retryCounter = 0
+                    } catch (e: Exception) {
+                        log(AdaptyLogLevel.WARN) { "$LOG_PREFIX $flowKey couldn't scale text: ${e.localizedMessage ?: e.message}" }
+                        if (++retryCounter <= 3) {
+                            retryLastCalculations = true
+                        } else {
+                            retryLastCalculations = false
+                            retryCounter = 0
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    private fun findBestScaledTextSize(textView: TextView, layout: Layout): Float {
+        val text = textView.text
         val paint = textView.paint
         val lastLine = textView.maxLines.coerceAtMost(textView.lineCount).coerceAtLeast(1) - 1
         val textSize = textView.textSize.toInt()
@@ -18,11 +75,11 @@ internal class TextHelper {
         val textSizes = (halfTextSize..textSize).toList()
         val bestTextSizeIndex = textSizes.binarySearch { value ->
             paint.textSize = value.toFloat()
-            val lastInLastLine = getLastCharIndex(text, lastLine, textView, layout)
+            val lastInLastLine = getLastCharIndex(lastLine, textView, layout)
 
             val nextValue = value + 1
             paint.textSize = nextValue.toFloat()
-            val lastInLastLineNext = getLastCharIndex(text, lastLine, textView, layout)
+            val lastInLastLineNext = getLastCharIndex(lastLine, textView, layout)
 
             when {
                 lastInLastLine == text.lastIndex && lastInLastLineNext < text.lastIndex -> 0
@@ -34,24 +91,23 @@ internal class TextHelper {
         return textSizes[bestTextSizeIndex].toFloat()
     }
 
-    fun isTruncated(text: CharSequence, textView: TextView, layout: Layout): Boolean {
+    private fun isTruncated(textView: TextView, layout: Layout): Boolean {
         val line = textView.maxLines.coerceAtMost(textView.lineCount).coerceAtLeast(1) - 1
-        return getLastCharIndex(text, line, textView, layout) != text.lastIndex
+        return getLastCharIndex(line, textView, layout) != textView.text.lastIndex
     }
 
     private fun getLastCharIndex(
-        text: CharSequence,
         line: Int,
         textView: TextView,
         layout: Layout,
     ): Int {
-        return configureStaticLayout(text, textView, layout).getLineEnd(line) - 1
+        return configureStaticLayout(textView, layout).getLineEnd(line) - 1
     }
 
-    private fun configureStaticLayout(text: CharSequence, textView: TextView, layout: Layout) =
+    private fun configureStaticLayout(textView: TextView, layout: Layout) =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             StaticLayout.Builder.obtain(
-                text,
+                textView.text,
                 0,
                 textView.text.length,
                 textView.paint,
@@ -61,7 +117,7 @@ internal class TextHelper {
                 .build()
         } else {
             StaticLayout(
-                text,
+                textView.text,
                 textView.paint,
                 textView.width,
                 layout.alignment,

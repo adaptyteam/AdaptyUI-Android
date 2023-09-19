@@ -1,34 +1,23 @@
 package com.adapty.ui.internal
 
+import android.content.Context
 import android.graphics.Typeface
 import androidx.annotation.RestrictTo
+import androidx.core.graphics.TypefaceCompat
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal object TypefaceHolder {
 
     private val typefaceCache = mutableMapOf<String, Typeface>()
 
-    fun getOrPut(familyName: String, style: String?): Typeface {
-        val familyName = when (familyName) {
-            "SFPro" -> "sans-serif"
-            else -> familyName
-        }
+    fun getOrPut(context: Context, familyName: String, style: String?): Typeface {
+        val fontKey = "$familyName-$style"
 
-        val textStyle: Int
-        val fontName: String
-        when (style) {
-            "bold", "italic" -> {
-                fontName = "${familyName}_$style"
-                textStyle = if (style == "italic") Typeface.ITALIC else Typeface.BOLD
-            }
-            else -> {
-                textStyle = Typeface.NORMAL
-                fontName = when (style) {
-                    null, "normal", "regular" -> familyName
-                    else -> "${familyName}-$style"
-                }
-            }
+        return typefaceCache.getOrPut(fontKey) {
+            val fontFamily = Typeface.create(familyName, Typeface.NORMAL)
+            val weight = style?.takeIf { it.isNotEmpty() }?.substring(1)?.toIntOrNull() ?: 400
+
+            TypefaceCompat.create(context, fontFamily, weight, false)
         }
-        return typefaceCache.getOrPut(fontName) { Typeface.create(fontName, textStyle) }
     }
 }

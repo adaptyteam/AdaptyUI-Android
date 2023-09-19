@@ -19,7 +19,7 @@ import com.adapty.ui.internal.PaywallPresenterFactory
 import com.adapty.ui.internal.log
 import com.adapty.ui.listeners.AdaptyUiDefaultEventListener
 import com.adapty.ui.listeners.AdaptyUiEventListener
-import com.adapty.ui.listeners.AdaptyUiProductTitleResolver
+import com.adapty.ui.listeners.AdaptyUiPersonalizedOfferResolver
 import com.adapty.utils.AdaptyLogLevel.Companion.ERROR
 import com.adapty.utils.AdaptyLogLevel.Companion.VERBOSE
 
@@ -75,9 +75,9 @@ public class AdaptyPaywallView @JvmOverloads constructor(
      * value should be 0.
      * If none of them do, you can pass [AdaptyPaywallInsets.NONE].
      *
-     * @param[productsTitleResolver] In case you want to override display names of the products,
-     * you can implement [AdaptyUiProductTitleResolver] and pass your own logic
-     * that maps [AdaptyPaywallProduct] to a display name.
+     * @param[personalizedOfferResolver] In case you want to indicate whether the price is personalized ([read more](https://developer.android.com/google/play/billing/integrate#personalized-price)),
+     * you can implement [AdaptyUiPersonalizedOfferResolver] and pass your own logic
+     * that maps [AdaptyPaywallProduct] to `true`, if the price of the product is personalized, otherwise `false`.
      */
     @UiThread
     public fun showPaywall(
@@ -85,7 +85,7 @@ public class AdaptyPaywallView @JvmOverloads constructor(
         products: List<AdaptyPaywallProduct>?,
         viewConfiguration: AdaptyViewConfiguration,
         insets: AdaptyPaywallInsets,
-        productsTitleResolver: AdaptyUiProductTitleResolver = AdaptyUiProductTitleResolver.DEFAULT,
+        personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver = AdaptyUiPersonalizedOfferResolver.DEFAULT,
     ) {
         log(VERBOSE) {
             "$LOG_PREFIX $flowKey showPaywall(template: ${viewConfiguration.templateId}, products: ${products?.size})"
@@ -98,7 +98,7 @@ public class AdaptyPaywallView @JvmOverloads constructor(
                 paywall,
                 products,
                 insets,
-                productsTitleResolver,
+                personalizedOfferResolver,
             )
         } catch (e: Exception) {
             onRenderingError(e)
@@ -107,7 +107,7 @@ public class AdaptyPaywallView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        presenter.onSizeChanged(this, w, h)
+        presenter.onSizeChanged(w, h)
     }
 
     override fun onAttachedToWindow() {

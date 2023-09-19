@@ -1,7 +1,6 @@
 package com.adapty.ui.listeners
 
 import android.app.Activity
-import android.app.AlertDialog
 import com.adapty.errors.AdaptyError
 import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyProfile
@@ -14,17 +13,26 @@ import com.adapty.ui.AdaptyUI
 public interface AdaptyUiEventListener {
 
     /**
-     * If the user presses the *close* icon, this callback is invoked.
+     * This callback is invoked when user interacts with some widgets on the paywall.
      *
-     * The [default][AdaptyUiDefaultEventListener.onCloseButtonClick] implementation is simply
-     * imitating pressing the system back button
+     * If the user presses the "Terms" or "Privacy Policy" buttons, action [OpenUrl][AdaptyUI.Action.OpenUrl] will be invoked.
+     * The [default][AdaptyUiDefaultEventListener.onActionPerformed] implementation shows a chooser
+     * with apps that can open the link.
+     *
+     * If the user presses the *close* button, action [Close][AdaptyUI.Action.Close] will be invoked.
+     * The [default][AdaptyUiDefaultEventListener.onActionPerformed] implementation is simply
+     * imitating pressing the system back button.
      *
      * Note: this callback is *not* invoked when user presses the system back button
      * instead of the *close* icon on the screen.
      *
+     * If a button has a custom action, action [Custom][AdaptyUI.Action.Custom] will be invoked.
+     *
+     * @param[action] An [Action][AdaptyUI.Action] object representing the action.
+     *
      * @param[view] An [AdaptyPaywallView] within which the event occurred.
      */
-    public fun onCloseButtonClick(view: AdaptyPaywallView)
+    public fun onActionPerformed(action: AdaptyUI.Action, view: AdaptyPaywallView)
 
     /**
      * This callback is invoked in case of errors during the products loading process.
@@ -144,41 +152,6 @@ public interface AdaptyUiEventListener {
      */
     public fun onRestoreSuccess(
         profile: AdaptyProfile,
-        view: AdaptyPaywallView,
-    )
-
-    /**
-     * If the user presses the "Terms" or "Privacy Policy" buttons, this callback is invoked.
-     *
-     * The [default][AdaptyUiDefaultEventListener.onUrlClicked] implementation shows a chooser
-     * with apps that can open the link.
-     *
-     * @param[url] A link to the desired page.
-     *
-     * @param[view] An [AdaptyPaywallView] within which the event occurred.
-     */
-    public fun onUrlClicked(url: String, view: AdaptyPaywallView)
-
-    /**
-     * In some cases it is necessary to show the message to the user.
-     * By overriding this method, you can show the event or error in any way you like.
-     *
-     * By [default][AdaptyUiDefaultEventListener.showAlert], errors are shown inside
-     * the [AlertDialog].
-     *
-     * Note: the callbacks that follow the dialog in the default implementation (i.e. [onRestoreSuccess])
-     * are invoked only after the dialog is dismissed.
-     * So if you override [showAlert][AdaptyUiDefaultEventListener.showAlert]
-     * from [AdaptyUiDefaultEventListener] without calling `super`, please make sure
-     * to call [doAfterAlert][AdaptyUiDefaultEventListener.doAfterAlert] when the said callbacks
-     * need to be triggered (or call them manually if you implement [AdaptyUiEventListener] listener directly).
-     *
-     * @param[event] An [AdaptyUI.Event] value that specifies the reason why the message should be shown to the user.
-     *
-     * @param[view] An [AdaptyPaywallView] within which the event occurred.
-     */
-    public fun showAlert(
-        event: AdaptyUI.Event,
         view: AdaptyPaywallView,
     )
 }

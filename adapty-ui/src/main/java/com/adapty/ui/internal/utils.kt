@@ -1,15 +1,20 @@
 package com.adapty.ui.internal
 
 import android.content.Context
-import android.graphics.Paint
 import android.graphics.Point
-import android.graphics.Rect
 import android.os.Build
+import android.text.Layout
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
-import androidx.annotation.RequiresApi
+import android.widget.TextView
 import com.adapty.internal.utils.InternalAdaptyApi
+import com.adapty.models.AdaptyEligibility.ELIGIBLE
+import com.adapty.models.AdaptyPaywallProduct
+import com.adapty.models.AdaptyProductDiscountPhase
+import com.adapty.models.AdaptyProductDiscountPhase.PaymentMode
+import com.adapty.models.AdaptyViewConfiguration
 import com.adapty.utils.AdaptyLogLevel
 import java.util.concurrent.Executors
 
@@ -34,46 +39,39 @@ internal fun WindowManager.getScreenSize(): Pair<Int, Int> {
 
 internal val View.locationOnScreen: IntArray get() = intArrayOf(0,0).also(::getLocationOnScreen)
 
-internal val View.topCoord: Int get() = locationOnScreen[1]
+internal val View.topCoord: Int get() = locationOnScreen[1] - translationY.toInt()
 
 internal val View.bottomCoord: Int get() = topCoord + height
 
-internal fun View.setBackgroundFromAttr(attrRes: Int) {
-    val typedValue = resolveAttr(context, attrRes)
-
-    if (typedValue.resourceId != 0) {
-        setBackgroundResource(typedValue.resourceId)
-    }
+internal fun TextView.setHorizontalGravity(horizontalGravity: Int) {
+    gravity = (gravity and Gravity.VERTICAL_GRAVITY_MASK) or horizontalGravity
 }
 
-@RequiresApi(Build.VERSION_CODES.M)
-internal fun View.setForegroundFromAttr(attrRes: Int) {
-    val typedValue = resolveAttr(context, attrRes)
-
-    if (typedValue.resourceId != 0) {
-        foreground = context.getDrawable(typedValue.resourceId)
-    }
+internal fun TextView.setVerticalGravity(verticalGravity: Int) {
+    gravity = (gravity and Gravity.HORIZONTAL_GRAVITY_MASK) or verticalGravity
 }
 
-private fun resolveAttr(context: Context, attrRes: Int): TypedValue {
-    val typedValue = TypedValue()
-
-    context.theme.resolveAttribute(attrRes, typedValue, true)
-    return typedValue
-}
-
-internal fun Paint.hasGlyphCompat(string: String): Boolean {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        return hasGlyph(string)
+internal fun AdaptyViewConfiguration.HorizontalAlign.toGravity() =
+    when (this) {
+        AdaptyViewConfiguration.HorizontalAlign.LEFT -> Gravity.START
+        AdaptyViewConfiguration.HorizontalAlign.CENTER -> Gravity.CENTER_HORIZONTAL
+        AdaptyViewConfiguration.HorizontalAlign.RIGHT -> Gravity.END
     }
-    val missingSymbol = "\uD809\uDCAB".toCharArray()
-    val missingSymbolBounds = Rect()
-        .also { bounds -> getTextBounds(missingSymbol, 0, missingSymbol.size, bounds) }
 
-    val testSymbol = string.toCharArray()
-    val testSymbolBounds = Rect()
-        .also { bounds -> getTextBounds(testSymbol, 0, testSymbol.size, bounds) }
-    return testSymbolBounds != missingSymbolBounds
+internal fun AdaptyViewConfiguration.HorizontalAlign.toLayoutAlignment() =
+    when (this) {
+        AdaptyViewConfiguration.HorizontalAlign.LEFT -> Layout.Alignment.ALIGN_NORMAL
+        AdaptyViewConfiguration.HorizontalAlign.CENTER -> Layout.Alignment.ALIGN_CENTER
+        AdaptyViewConfiguration.HorizontalAlign.RIGHT -> Layout.Alignment.ALIGN_OPPOSITE
+    }
+
+internal fun AdaptyPaywallProduct.hasFreeTrial(): Boolean =
+    firstDiscountOfferOrNull()?.paymentMode == PaymentMode.FREE_TRIAL
+
+internal fun AdaptyPaywallProduct.firstDiscountOfferOrNull(): AdaptyProductDiscountPhase? {
+    return subscriptionDetails?.let { subDetails ->
+        subDetails.introductoryOfferPhases.firstOrNull()?.takeIf { subDetails.introductoryOfferEligibility == ELIGIBLE }
+    }
 }
 
 private val logExecutor = Executors.newSingleThreadExecutor()

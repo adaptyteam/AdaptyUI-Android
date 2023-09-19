@@ -5,14 +5,12 @@ import android.view.View
 import android.view.ViewGroup.LayoutParams
 import androidx.annotation.UiThread
 import com.adapty.Adapty
-import com.adapty.errors.AdaptyError
 import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
-import com.adapty.models.AdaptyProfile
 import com.adapty.models.AdaptyViewConfiguration
 import com.adapty.ui.listeners.AdaptyUiDefaultEventListener
 import com.adapty.ui.listeners.AdaptyUiEventListener
-import com.adapty.ui.listeners.AdaptyUiProductTitleResolver
+import com.adapty.ui.listeners.AdaptyUiPersonalizedOfferResolver
 
 public object AdaptyUI {
 
@@ -45,9 +43,9 @@ public object AdaptyUI {
      * Use it to respond to different events happening inside the purchase screen.
      * Also you can extend [AdaptyUiDefaultEventListener] so you don't need to override all the methods.
      *
-     * @param[productsTitleResolver] In case you want to override display names of the products,
-     * you can implement [AdaptyUiProductTitleResolver] and pass your own logic
-     * that maps [AdaptyPaywallProduct] to a display name.
+     * @param[personalizedOfferResolver] In case you want to indicate whether the price is personalized ([read more](https://developer.android.com/google/play/billing/integrate#personalized-price)),
+     * you can implement [AdaptyUiPersonalizedOfferResolver] and pass your own logic
+     * that maps [AdaptyPaywallProduct] to `true`, if the price of the product is personalized, otherwise `false`.
      *
      * @return An [AdaptyPaywallView] object, representing the requested paywall screen.
      */
@@ -60,7 +58,7 @@ public object AdaptyUI {
         viewConfiguration: AdaptyViewConfiguration,
         insets: AdaptyPaywallInsets,
         eventListener: AdaptyUiEventListener,
-        productsTitleResolver: AdaptyUiProductTitleResolver = AdaptyUiProductTitleResolver.DEFAULT,
+        personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver = AdaptyUiPersonalizedOfferResolver.DEFAULT,
     ): AdaptyPaywallView {
         return AdaptyPaywallView(activity).apply {
             id = View.generateViewId()
@@ -72,23 +70,14 @@ public object AdaptyUI {
                 products,
                 viewConfiguration,
                 insets,
-                productsTitleResolver,
+                personalizedOfferResolver,
             )
         }
     }
 
-    public sealed class Event {
-        /**
-         * This event occurs when a successful restore is made.
-         */
-        public class Restored(public val profile: AdaptyProfile) : Event()
-
-        /**
-         * This event occurs when an error is happened.
-         */
-        public sealed class Error(public val error: AdaptyError) : Event() {
-            public class OnRestore(error: AdaptyError) : Error(error)
-            public class OnPurchase(error: AdaptyError, public val product: AdaptyPaywallProduct) : Error(error)
-        }
+    public sealed class Action {
+        public object Close : Action()
+        public class OpenUrl(public val url: String) : Action()
+        public class Custom(public val customId: String): Action()
     }
 }

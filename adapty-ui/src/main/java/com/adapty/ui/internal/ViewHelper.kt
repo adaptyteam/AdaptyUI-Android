@@ -1,0 +1,485 @@
+package com.adapty.ui.internal
+
+import android.content.Context
+import android.graphics.Color
+import android.graphics.Outline
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.os.Build
+import android.text.TextUtils.TruncateAt
+import android.util.TypedValue
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup.LayoutParams
+import android.view.ViewOutlineProvider
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.ProgressBar
+import android.widget.TextView
+import androidx.annotation.RestrictTo
+import androidx.constraintlayout.widget.ConstraintLayout
+import com.adapty.models.AdaptyViewConfiguration.Asset
+import com.adapty.models.AdaptyViewConfiguration.Component
+import com.adapty.ui.AdaptyPaywallInsets
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+internal class ViewHelper(
+    private val drawableHelper: DrawableHelper,
+    private val textHelper: TextHelper,
+    private val textComponentHelper: TextComponentHelper,
+) {
+
+    fun createView(context: Context, textComponent: Component.Text, templateConfig: TemplateConfig): TextView {
+        return TextView(context)
+            .also { view ->
+                view.id = View.generateViewId()
+
+                val textProperties = textComponentHelper.processTextComponent(context, textComponent, templateConfig)
+
+                applyTextProperties(view, textProperties)
+            }
+    }
+
+    fun createView(
+        context: Context,
+        buttonComponent: Component.Button,
+        templateConfig: TemplateConfig,
+        actionListener: (Component.Button.Action) -> Unit,
+        addRipple: Boolean = true,
+    ): TextView {
+        val view = TextView(context)
+        view.id = View.generateViewId()
+        applyButtonProperties(view, buttonComponent, templateConfig, actionListener, addRipple)
+
+        buttonComponent.title?.let { title ->
+            val textProperties = textComponentHelper.processTextComponent(context, title, templateConfig)
+            applyTextProperties(view, textProperties)
+        }
+
+        return view
+    }
+
+    fun createProductViewsBundle(
+        context: Context,
+        productInfo: ProductInfo,
+        blockType: Products.BlockType,
+        templateConfig: TemplateConfig,
+        actionListener: (Component.Button.Action) -> Unit,
+        onTextViewHeightChangeOnResizeCallback: () -> Unit,
+    ): ProductViewsBundle {
+        val typeIsSingle = blockType == Products.BlockType.Single
+
+        val productCell = productInfo.button?.takeIf { !typeIsSingle }?.let { button ->
+            createView(context, button, templateConfig, actionListener, addRipple = false)
+        }
+
+        val productTitle = productInfo.title?.let { text ->
+            createInnerProductText(context, text, templateConfig)
+                .also { view -> textHelper.resizeTextOnPreDrawIfNeeded(view, true, onTextViewHeightChangeOnResizeCallback) }
+        }
+
+        val productSubtitle = productInfo.hasSubtitle.takeIf { it }?.let {
+            TextView(context).also { view ->
+                view.id = View.generateViewId()
+                view.maxLines = 2
+                view.ellipsize = TruncateAt.END
+                textHelper.resizeTextOnPreDrawIfNeeded(view, true, onTextViewHeightChangeOnResizeCallback)
+            }
+        }
+
+        val productSecondTitle = productInfo.secondTitle?.let { text ->
+            createInnerProductText(context, text, templateConfig)
+                .also { view -> textHelper.resizeTextOnPreDrawIfNeeded(view, true, onTextViewHeightChangeOnResizeCallback) }
+        }
+
+        val productSecondSubtitle = productInfo.secondSubtitle?.takeIf { !typeIsSingle }?.let { text ->
+            createInnerProductText(context, text, templateConfig)
+                .also { view -> textHelper.resizeTextOnPreDrawIfNeeded(view, true, onTextViewHeightChangeOnResizeCallback) }
+        }
+
+        val mainProductTag = productInfo.tagText?.takeIf { !typeIsSingle }?.let { tagText ->
+            createMainProductTag(context, tagText, productInfo.tagShape, templateConfig)
+                .also { view -> textHelper.resizeTextOnPreDrawIfNeeded(view, true, onTextViewHeightChangeOnResizeCallback) }
+        }
+
+        return ProductViewsBundle(
+            productCell,
+            productTitle,
+            productSubtitle,
+            productSecondTitle,
+            productSecondSubtitle,
+            mainProductTag,
+        )
+    }
+
+    fun createFeatureUiBlock(
+        context: Context,
+        features: Features,
+        templateConfig: TemplateConfig,
+    ): FeatureUIBlock {
+        return when (features) {
+            is Features.List -> {
+                val textView = createView(context, features.textComponent, templateConfig)
+
+                FeatureUIBlock.List(textView)
+            }
+            is Features.TimeLine -> {
+                val timelineDrawableWidthPx = TIMELINE_DRAWABLE_BACKGROUND_WIDTH_DP.dp(context).toInt()
+                val timelineTextStartMarginPx = TIMELINE_TEXT_START_MARGIN_DP.dp(context).toInt()
+
+                val cells = features.timelineEntries.map { timelineEntry ->
+                    val textView = createView(context, timelineEntry.text, templateConfig)
+                    val startDrawable = drawableHelper.createTimelineDrawable(timelineEntry, templateConfig, context)
+
+                    val image = View(context)
+                    image.id = View.generateViewId()
+                    image.background = startDrawable
+
+                    FeatureUIBlock.TimeLine.Cell(image, textView, timelineDrawableWidthPx, timelineTextStartMarginPx)
+                }
+
+                FeatureUIBlock.TimeLine(cells)
+            }
+        }
+    }
+
+    fun createContentBackgroundView(
+        context: Context,
+        shape: Component.Shape,
+        templateConfig: TemplateConfig,
+    ): View {
+        return View(context).apply {
+            id = View.generateViewId()
+            background = drawableHelper.createDrawable(shape, templateConfig, context)
+        }
+    }
+
+    fun createScrollView(context: Context): PaywallScrollView {
+        return PaywallScrollView(context).apply {
+            id = View.generateViewId()
+
+            layoutParams = LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.WRAP_CONTENT,
+            )
+
+            isVerticalScrollBarEnabled = false
+            overScrollMode = View.OVER_SCROLL_NEVER
+        }
+    }
+
+    fun createLoadingView(context: Context): ProgressBar {
+        return ProgressBar(context).apply {
+            id = View.generateViewId()
+            layoutParams = LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT,
+            )
+            isIndeterminate = true
+            isClickable = true
+            setBackgroundColor(Color.parseColor(LOADING_BG_COLOR_HEX))
+            visibility = View.GONE
+        }
+    }
+
+    fun createContentContainer(context: Context, minHeight: Int? = null): ConstraintLayout {
+        return ConstraintLayout(context).apply {
+            id = View.generateViewId()
+            layoutParams = LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.WRAP_CONTENT,
+            ).apply {
+                minHeight?.let(::setMinHeight)
+            }
+        }
+    }
+
+    @JvmName("createBackgroundViewOrNull")
+    fun createBackgroundView(
+        context: Context,
+        width: Int,
+        height: Int,
+        filling: Asset.Filling?,
+    ): View? {
+        return filling?.let { createBackgroundView(context, width, height, filling) }
+    }
+
+    fun createBackgroundView(
+        context: Context,
+        width: Int,
+        height: Int,
+        filling: Asset.Filling,
+    ): View {
+        return ImageView(context).apply {
+            id = View.generateViewId()
+
+            layoutParams = LayoutParams(width, height)
+
+            setImageDrawable(
+                drawableHelper.createDrawable(filling)
+            )
+
+            scaleType = ImageView.ScaleType.CENTER_CROP
+        }
+    }
+
+    fun createContentImage(
+        context: Context,
+        shape: Component.Shape,
+        templateConfig: TemplateConfig,
+    ): View {
+        return View(context).apply {
+            id = View.generateViewId()
+            background = drawableHelper.createDrawable(shape, templateConfig, context)
+        }
+    }
+
+    fun createCloseView(
+        context: Context,
+        buttonComponent: Component.Button,
+        templateConfig: TemplateConfig,
+        insets: AdaptyPaywallInsets,
+        actionListener: (Component.Button.Action) -> Unit,
+    ): View {
+        val height = CLOSE_BUTTON_HEIGHT_DP.dp(context).toInt()
+        val width: Int
+        val title = buttonComponent.title
+        return if (title is Component.Text) {
+            width = LayoutParams.WRAP_CONTENT
+            val horizontalPadding = CLOSE_BUTTON_TEXT_HORIZONTAL_PADDING_DP.dp(context).toInt()
+            createView(context, buttonComponent, templateConfig, actionListener)
+                .apply {
+                    setPadding(horizontalPadding, paddingTop, horizontalPadding, paddingBottom)
+                    setVerticalGravity(Gravity.CENTER_VERTICAL)
+                }
+        } else {
+            width = height
+            createView(context, buttonComponent, templateConfig, actionListener)
+                .also { view ->
+                    buttonComponent.shape?.backgroundAssetId?.let { assetId ->
+                        view.background = BitmapDrawable(
+                            context.resources,
+                            templateConfig.getAsset<Asset.Image>(assetId).bitmap,
+                        )
+                    }
+                }
+        }.apply {
+            val edgeHorizontalMargin = CLOSE_BUTTON_HORIZONTAL_MARGIN_DP.dp(context).toInt()
+            layoutParams = FrameLayout.LayoutParams(width, height).apply {
+                topMargin = CLOSE_BUTTON_TOP_MARGIN_DP.dp(context).toInt() + insets.top
+
+                when (buttonComponent.align) {
+                    Component.Button.Align.TRAILING -> {
+                        gravity = Gravity.TOP or Gravity.END
+                        marginEnd = edgeHorizontalMargin
+                    }
+                    Component.Button.Align.CENTER -> {
+                        gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                    }
+                    else -> {
+                        gravity = Gravity.TOP or Gravity.START
+                        marginStart = edgeHorizontalMargin
+                    }
+                }
+            }
+        }
+    }
+
+    fun createPurchaseButton(
+        context: Context,
+        buttonComponent: Component.Button,
+        templateConfig: TemplateConfig,
+        actionListener: (Component.Button.Action) -> Unit,
+    ): ComplexButton {
+        val bgView = View(context).apply {
+            id = View.generateViewId()
+            applyButtonProperties(this, buttonComponent, templateConfig, actionListener)
+        }
+
+        val textView = buttonComponent.title?.let { title ->
+            createView(context, title, templateConfig)
+                .apply {
+                    isClickable = false
+                    isFocusable = false
+                    maxLines = 2
+                    ellipsize = TruncateAt.END
+                    setVerticalGravity(Gravity.CENTER_VERTICAL)
+                    textHelper.resizeTextOnPreDrawIfNeeded(this, true)
+                }
+        }
+
+        val paddings = ComplexButton.Paddings.all(PURCHASE_BUTTON_PADDING_DP.dp(context).toInt())
+
+        return ComplexButton(bgView, textView, paddings)
+    }
+
+    private fun createMainProductTag(
+        context: Context,
+        textComponent: Component.Text,
+        shapeComponent: Component.Shape?,
+        templateConfig: TemplateConfig,
+    ): TextView {
+        return createView(context, textComponent, templateConfig)
+            .apply {
+                makeSingleLine(this)
+
+                gravity = Gravity.CENTER
+
+                shapeComponent?.let { shape ->
+                    background = drawableHelper.createDrawable(shape, templateConfig, context)
+                }
+
+                val horizontalPadding = MAIN_PRODUCT_TAG_HORIZONTAL_PADDING_DP.dp(context).toInt()
+                setPadding(horizontalPadding, paddingTop, horizontalPadding, paddingBottom)
+            }
+    }
+
+    private fun createInnerProductText(
+        context: Context,
+        textComponent: Component.Text,
+        templateConfig: TemplateConfig,
+    ): TextView {
+        return TextView(context)
+            .also { view ->
+                view.id = View.generateViewId()
+
+                val properties = textComponentHelper.processTextComponent(context, textComponent, templateConfig)
+
+                view.setHorizontalGravity(properties.horizontalGravity)
+                properties.textSize?.let(view::setTextSize)
+
+                if (properties is TextProperties.Single) {
+                    properties.typeface?.let(view::setTypeface)
+                    properties.textColor?.let(view::setTextColor)
+                }
+
+                view.transformationMethod = null
+                view.includeFontPadding = false
+
+                makeSingleLine(view)
+            }
+    }
+
+    fun createFooterButton(
+        context: Context,
+        buttonComponent: Component.Button,
+        templateConfig: TemplateConfig,
+        actionListener: (Component.Button.Action) -> Unit,
+        onTextViewHeightChangeOnResizeCallback: () -> Unit,
+    ): TextView {
+        return createView(context, buttonComponent, templateConfig, actionListener)
+            .apply {
+                val verticalPadding = FOOTER_BUTTON_VERTICAL_PADDING_DP.dp(context).toInt()
+                setPadding(paddingLeft, verticalPadding, paddingRight, verticalPadding)
+                gravity = Gravity.CENTER
+
+                val horizontalPadding = FOOTER_BUTTON_HORIZONTAL_PADDING_DP.dp(context).toInt()
+                setPadding(horizontalPadding, paddingTop, horizontalPadding, paddingBottom)
+
+                makeSingleLine(this)
+
+                val bgDrawable = background
+                if (bgDrawable == null) {
+                    applyBackgroundRipple(this)
+
+                    val rippleCornerRadiusDefault = FOOTER_BUTTON_OUTLINE_CORNER_RADIUS_DP.dp(context)
+
+                    clipToOutline = true
+                    outlineProvider = object : ViewOutlineProvider() {
+                        override fun getOutline(view: View, outline: Outline) {
+                            outline.setRoundRect(
+                                0,
+                                0,
+                                view.width,
+                                view.height,
+                                rippleCornerRadiusDefault,
+                            )
+                        }
+                    }
+                } else {
+                    applyForegroundRipple(this, bgDrawable)
+                }
+
+                textHelper.resizeTextOnPreDrawIfNeeded(this, true, onTextViewHeightChangeOnResizeCallback)
+            }
+    }
+
+    private fun applyButtonProperties(
+        view: View,
+        buttonComponent: Component.Button,
+        templateConfig: TemplateConfig,
+        actionListener: (Component.Button.Action) -> Unit,
+        addRipple: Boolean = true,
+    ) {
+        buttonComponent.shape?.let { shape ->
+            val shapes = listOf(
+                android.R.attr.state_selected to buttonComponent.selectedShape,
+                android.R.attr.state_enabled to shape,
+            )
+            val buttonBg = drawableHelper.createDrawable(shapes, templateConfig, view.context)
+
+            view.background = buttonBg
+
+            if (addRipple)
+                applyForegroundRipple(view, buttonBg)
+
+            buttonComponent.action?.let { action ->
+                view.setOnClickListener {
+                    actionListener.invoke(action)
+                }
+            }
+        }
+    }
+
+    private fun applyForegroundRipple(view: View, bgDrawable: Drawable) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val typedValue = resolveAttr(view.context, android.R.attr.selectableItemBackground)
+                val fgDrawable = drawableHelper.createForegroundRippleDrawable(
+                    view.context,
+                    typedValue.resourceId,
+                    bgDrawable
+                )
+
+                if (fgDrawable != null) {
+                    view.foreground = fgDrawable
+                }
+            }
+        } catch (e: Throwable) { }
+    }
+
+    private fun applyBackgroundRipple(view: View) {
+        val typedValue = resolveAttr(view.context, android.R.attr.selectableItemBackground)
+
+        if (typedValue.resourceId != 0) {
+            view.setBackgroundResource(typedValue.resourceId)
+        }
+    }
+
+    private fun resolveAttr(context: Context, attrRes: Int): TypedValue {
+        val typedValue = TypedValue()
+
+        context.theme.resolveAttribute(attrRes, typedValue, true)
+        return typedValue
+    }
+
+    fun applyTextProperties(view: TextView, properties: TextProperties) {
+        view.text = properties.text
+        view.setHorizontalGravity(properties.horizontalGravity)
+        properties.textSize?.let(view::setTextSize)
+
+        if (properties is TextProperties.Single) {
+            properties.typeface?.let(view::setTypeface)
+            properties.textColor?.let(view::setTextColor)
+        }
+
+        view.transformationMethod = null
+        view.includeFontPadding = false
+    }
+
+    private fun makeSingleLine(view: TextView, ellipsize: TruncateAt = TruncateAt.END) {
+        view.setSingleLine()
+        view.maxLines = 1
+        view.ellipsize = ellipsize
+    }
+}

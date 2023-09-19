@@ -5,7 +5,6 @@ package com.adapty.ui.internal
 import android.app.Activity
 import android.os.Handler
 import android.os.Looper
-import android.view.View
 import androidx.annotation.RestrictTo
 import com.adapty.Adapty
 import com.adapty.errors.AdaptyErrorCode
@@ -16,9 +15,8 @@ import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyViewConfiguration
 import com.adapty.ui.AdaptyPaywallInsets
 import com.adapty.ui.AdaptyPaywallView
-import com.adapty.ui.AdaptyUI.Event.Error
-import com.adapty.ui.AdaptyUI.Event.Restored
-import com.adapty.ui.listeners.AdaptyUiProductTitleResolver
+import com.adapty.ui.AdaptyUI
+import com.adapty.ui.listeners.AdaptyUiPersonalizedOfferResolver
 import com.adapty.utils.AdaptyLogLevel.Companion.ERROR
 import com.adapty.utils.AdaptyLogLevel.Companion.VERBOSE
 import com.adapty.utils.AdaptyResult
@@ -41,9 +39,11 @@ internal class PaywallPresenter(
         paywall: AdaptyPaywall,
         products: List<AdaptyPaywallProduct>?,
         insets: AdaptyPaywallInsets,
-        productTitleResolver: AdaptyUiProductTitleResolver,
+        personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver,
     ) {
         checkViewContext(paywallView)
+
+        val templateConfig = TemplateConfig.from(viewConfig)
 
         val interactionListener = object : PaywallUiManager.InteractionListener {
             override fun onProductSelected(product: AdaptyPaywallProduct) {
@@ -54,7 +54,7 @@ internal class PaywallPresenter(
 
             override fun onPurchaseButtonClicked() {
                 selectedProduct?.let { product ->
-                    performMakePurchase(paywallView, product)
+                    performMakePurchase(paywallView, product, personalizedOfferResolver)
                 }
             }
 
@@ -63,26 +63,35 @@ internal class PaywallPresenter(
             }
 
             override fun onUrlClicked(url: String) {
-                paywallView.eventListener?.onUrlClicked(url, paywallView)
+                paywallView.eventListener?.onActionPerformed(
+                    AdaptyUI.Action.OpenUrl(url),
+                    paywallView,
+                )
+            }
+
+            override fun onCustomActionInvoked(customId: String) {
+                paywallView.eventListener?.onActionPerformed(
+                    AdaptyUI.Action.Custom(customId),
+                    paywallView,
+                )
             }
 
             override fun onCloseClicked() {
-                paywallView.eventListener?.onCloseButtonClick(paywallView)
+                paywallView.eventListener?.onActionPerformed(AdaptyUI.Action.Close, paywallView)
             }
         }
 
         uiManager.buildLayout(
             paywallView,
-            viewConfig,
+            templateConfig,
             paywall,
             products,
             insets,
             interactionListener,
-            productTitleResolver,
         )
 
         if (products.isNullOrEmpty()) {
-            loadProducts(paywall, viewConfig, paywallView, interactionListener, productTitleResolver)
+            loadProducts(paywall, templateConfig, paywallView, interactionListener)
         }
 
         log(VERBOSE) { "$LOG_PREFIX $flowKey logShowPaywall begin" }
@@ -101,19 +110,21 @@ internal class PaywallPresenter(
         selectedProduct = null
     }
 
-    fun onSizeChanged(view: View, w: Int, h: Int) {
-        uiManager.onSizeChanged(view, w, h)
+    fun onSizeChanged(w: Int, h: Int) {
+        uiManager.onSizeChanged(w, h)
     }
 
     private fun performMakePurchase(
         paywallView: AdaptyPaywallView,
         product: AdaptyPaywallProduct,
+        personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver,
     ) {
         val activity = paywallView.context as? Activity ?: return
         uiManager.toggleLoadingView(true)
         log(VERBOSE) { "$LOG_PREFIX $flowKey makePurchase begin" }
         paywallView.eventListener?.onPurchaseStarted(product, paywallView)
-        Adapty.makePurchase(activity, product) { result ->
+        val isOfferPersonalized = personalizedOfferResolver.resolve(product)
+        Adapty.makePurchase(activity, product, isOfferPersonalized = isOfferPersonalized) { result ->
             uiManager.toggleLoadingView(false)
             when (result) {
                 is AdaptyResult.Success -> {
@@ -132,8 +143,9 @@ internal class PaywallPresenter(
                             paywallView.eventListener?.onPurchaseCanceled(product, paywallView)
                         }
                         else -> {
-                            paywallView.eventListener?.showAlert(
-                                Error.OnPurchase(result.error, product),
+                            paywallView.eventListener?.onPurchaseFailure(
+                                result.error,
+                                product,
                                 paywallView,
                             )
                         }
@@ -151,17 +163,11 @@ internal class PaywallPresenter(
             when (result) {
                 is AdaptyResult.Success -> {
                     log(VERBOSE) { "$LOG_PREFIX $flowKey restorePurchases success" }
-                    paywallView.eventListener?.showAlert(
-                        Restored(result.value),
-                        paywallView,
-                    )
+                    paywallView.eventListener?.onRestoreSuccess(result.value, paywallView)
                 }
                 is AdaptyResult.Error -> {
                     log(ERROR) { "$LOG_PREFIX_ERROR $flowKey restorePurchases error: ${result.error.message}" }
-                    paywallView.eventListener?.showAlert(
-                        Error.OnRestore(result.error),
-                        paywallView,
-                    )
+                    paywallView.eventListener?.onRestoreFailure(result.error, paywallView)
                 }
             }
         }
@@ -169,17 +175,16 @@ internal class PaywallPresenter(
 
     private fun loadProducts(
         paywall: AdaptyPaywall,
-        viewConfig: AdaptyViewConfiguration,
+        templateConfig: TemplateConfig,
         paywallView: AdaptyPaywallView,
         interactionListener: PaywallUiManager.InteractionListener,
-        productTitleResolver: AdaptyUiProductTitleResolver,
     ) {
         uiManager.toggleLoadingView(true)
         log(VERBOSE) { "$LOG_PREFIX $flowKey loadProducts begin" }
         Adapty.getPaywallProducts(paywall) { result ->
             when (result) {
                 is AdaptyResult.Success -> {
-                    uiManager.onProductsLoaded(result.value, viewConfig, interactionListener, productTitleResolver)
+                    uiManager.onProductsLoaded(result.value, templateConfig, interactionListener)
                     uiManager.toggleLoadingView(false)
                     log(VERBOSE) { "$LOG_PREFIX $flowKey loadProducts success" }
                 }
@@ -188,7 +193,7 @@ internal class PaywallPresenter(
                         paywallView.eventListener?.onLoadingProductsFailure(result.error, paywallView) ?: false
                     if (shouldRetry) {
                         handler.postDelayed({
-                            loadProducts(paywall, viewConfig, paywallView, interactionListener, productTitleResolver)
+                            loadProducts(paywall, templateConfig, paywallView, interactionListener)
                         }, LOADING_PRODUCTS_RETRY_DELAY)
                     } else {
                         uiManager.toggleLoadingView(false)
