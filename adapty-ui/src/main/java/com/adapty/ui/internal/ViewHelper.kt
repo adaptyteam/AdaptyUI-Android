@@ -422,11 +422,11 @@ internal class ViewHelper(
 
             if (addRipple)
                 applyForegroundRipple(view, buttonBg)
+        }
 
-            buttonComponent.action?.let { action ->
-                view.setOnClickListener {
-                    actionListener.invoke(action)
-                }
+        buttonComponent.action?.let { action ->
+            view.setOnClickListener {
+                actionListener.invoke(action)
             }
         }
     }
