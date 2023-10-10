@@ -3,7 +3,6 @@ package com.adapty.ui.internal
 import android.view.View
 import androidx.annotation.RestrictTo
 import androidx.constraintlayout.widget.ConstraintLayout
-import kotlin.math.min
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class PaywallScreen(
@@ -23,8 +22,6 @@ internal class PaywallScreen(
 
     fun onSizeChanged(w: Int, h: Int) {
         props.paywallViewSizeChangeConsumed = false
-        val padding = ((min(w, h) - LOADING_INDICATOR_WIDTH_DP.dp(loadingView.context)) / 2).toInt()
-        loadingView.setPadding(padding, padding, padding, padding)
     }
 
     fun toggleLoadingView(show: Boolean) {

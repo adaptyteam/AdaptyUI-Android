@@ -35,7 +35,7 @@ internal class PaywallScrollView @JvmOverloads constructor(
     }
 
     private fun setFooterInfo(views: Collection<View>, stickyBottomCoord: Int) {
-        val initialBottomCoord = views.first().bottomCoord
+        val initialBottomCoord = views.first().bottomCoord - topCoord
 
         updateCurrentTranslation(views, initialBottomCoord, stickyBottomCoord, scrollY)
 

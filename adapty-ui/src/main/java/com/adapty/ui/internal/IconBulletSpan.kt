@@ -28,13 +28,23 @@ internal class IconBulletSpan(
 
             val widthPx = bullet.bounds.width()
             val heightPx = bullet.bounds.height()
-            val bulletStart = x + layout.getPrimaryHorizontal(start).toInt() - spacePx
+            val bulletStart = layout.getPrimaryHorizontal(start).toInt() - dir * spacePx
             val lineHeight = bottom - top
             val centerY = top + (lineHeight.toFloat() + verticalSpacingPx) / 2
             val halfHeight = heightPx / 2
             val newTop = (centerY - halfHeight).toInt()
             val newBottom = (centerY + halfHeight).toInt()
-            bullet.setBounds(bulletStart, newTop, bulletStart + dir * widthPx, newBottom)
+            val bulletEnd = bulletStart + dir * widthPx
+            val bulletLeft: Int
+            val bulletRight: Int
+            if (bulletEnd < bulletStart) {
+                bulletLeft = bulletEnd
+                bulletRight = bulletStart
+            } else {
+                bulletLeft = bulletStart
+                bulletRight = bulletEnd
+            }
+            bullet.setBounds(bulletLeft, newTop, bulletRight, newBottom)
             bullet.draw(c)
         }
     }

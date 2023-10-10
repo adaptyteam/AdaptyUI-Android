@@ -34,10 +34,10 @@ Adapty.getPaywall("YOUR_PAYWALL_ID") { result ->
 }
 ```
 
-After fetching the paywall call the `Adapty.getViewConfiguration(paywall)` method to load the view configuration:
+After fetching the paywall call the `Adapty.getViewConfiguration(paywall, locale)` method to load the view configuration:
 
 ```kotlin
-Adapty.getViewConfiguration(paywall) { result ->
+Adapty.getViewConfiguration(paywall, locale) { result ->
     when(result) {
         is AdaptyResult.Success -> {
             val viewConfiguration = result.value
@@ -73,11 +73,11 @@ val paywallView =
 with(paywallView) {
     setEventListener(eventListener)
     showPaywall(
-            paywall,
-            products,
-            viewConfiguration,
-            AdaptyPaywallInsets.of(topInset, bottomInset),
-        )
+        paywall,
+        products,
+        viewConfiguration,
+        AdaptyPaywallInsets.of(topInset, bottomInset),
+    )
 }
 
 ```

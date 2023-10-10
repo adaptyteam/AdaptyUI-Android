@@ -2,6 +2,7 @@ package com.adapty.ui.internal
 
 import android.graphics.Typeface
 import android.view.Gravity
+import android.view.View
 import androidx.annotation.ColorInt
 import androidx.annotation.RestrictTo
 
@@ -11,6 +12,12 @@ internal sealed class TextProperties(
     val horizontalGravity: Int,
     val textSize: Float?,
 ) {
+
+    val textAlignment
+        get() = when (horizontalGravity) {
+            Gravity.START -> View.TEXT_ALIGNMENT_VIEW_START
+            else -> View.TEXT_ALIGNMENT_VIEW_END
+        }
 
     class Builder {
         var isMultiple = false

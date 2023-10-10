@@ -18,12 +18,14 @@ import com.adapty.internal.utils.adaptyError
 import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyViewConfiguration
+import java.text.Format
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class ProductBlockRenderer(
     private val viewHelper: ViewHelper,
     private val layoutHelper: LayoutHelper,
     private val textComponentHelper: TextComponentHelper,
+    private val numberFormat: Format,
 ) {
 
     fun render(
@@ -186,7 +188,7 @@ internal class ProductBlockRenderer(
                     }
                 }
 
-                val productPlaceholders = ProductPlaceholderContentData.create(product)
+                val productPlaceholders = ProductPlaceholderContentData.create(product, numberFormat)
 
                 if (productViewsBundle.productTitle != null)
                     fillInnerText(

@@ -5,9 +5,14 @@ import android.widget.TextView
 import androidx.annotation.RestrictTo
 import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyPeriodUnit
+import com.adapty.models.AdaptyPeriodUnit.DAY
+import com.adapty.models.AdaptyPeriodUnit.MONTH
+import com.adapty.models.AdaptyPeriodUnit.WEEK
+import com.adapty.models.AdaptyPeriodUnit.YEAR
 import com.adapty.models.AdaptyProductDiscountPhase.PaymentMode
 import com.adapty.models.AdaptyViewConfiguration.Component
 import java.math.RoundingMode
+import java.text.Format
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class Products(
@@ -93,18 +98,16 @@ internal sealed class ProductPlaceholderContentData(
 
     companion object {
 
-        fun create(product: AdaptyPaywallProduct): List<ProductPlaceholderContentData> {
+        fun create(product: AdaptyPaywallProduct, numberFormat: Format): List<ProductPlaceholderContentData> {
             val firstDiscountOfferIfExists = product.firstDiscountOfferOrNull()
 
             return listOf(
                 from("</TITLE/>", product.localizedTitle),
                 from("</PRICE/>", product.price.localizedString, product),
-                from("</PRICE_PER_DAY/>", createPricePerPeriodText(product, AdaptyPeriodUnit.DAY), product),
-                from("</PRICE_PER_WEEK/>", createPricePerPeriodText(product, AdaptyPeriodUnit.WEEK), product),
-                from("</PRICE_PER_MONTH/>", createPricePerPeriodText(product,
-                    AdaptyPeriodUnit.MONTH
-                ), product),
-                from("</PRICE_PER_YEAR/>", createPricePerPeriodText(product, AdaptyPeriodUnit.YEAR), product),
+                from("</PRICE_PER_DAY/>", createPricePerPeriodText(product, DAY, numberFormat), product),
+                from("</PRICE_PER_WEEK/>", createPricePerPeriodText(product, WEEK, numberFormat), product),
+                from("</PRICE_PER_MONTH/>", createPricePerPeriodText(product, MONTH, numberFormat), product),
+                from("</PRICE_PER_YEAR/>", createPricePerPeriodText(product, YEAR, numberFormat), product),
                 from("</OFFER_PRICE/>", firstDiscountOfferIfExists?.price?.localizedString, product),
                 from("</OFFER_PERIOD/>", firstDiscountOfferIfExists?.localizedSubscriptionPeriod),
                 from("</OFFER_NUMBER_OF_PERIOD/>", firstDiscountOfferIfExists?.localizedNumberOfPeriods),
@@ -118,15 +121,11 @@ internal sealed class ProductPlaceholderContentData(
                 else -> Extended(placeholder, value, product)
             }
 
-        private fun createPricePerPeriodText(product: AdaptyPaywallProduct, targetUnit: AdaptyPeriodUnit): String? {
+        private fun createPricePerPeriodText(product: AdaptyPaywallProduct, targetUnit: AdaptyPeriodUnit, numberFormat: Format): String? {
             val subscriptionPeriod = product.subscriptionDetails?.subscriptionPeriod
             val price = product.price
             val unit =
-                subscriptionPeriod?.unit?.takeIf { it in listOf(
-                    AdaptyPeriodUnit.WEEK,
-                    AdaptyPeriodUnit.YEAR,
-                    AdaptyPeriodUnit.MONTH
-                ) } ?: return null
+                subscriptionPeriod?.unit?.takeIf { it in listOf(WEEK, YEAR, MONTH) } ?: return null
             val numberOfUnits = subscriptionPeriod.numberOfUnits.takeIf { it > 0 } ?: return null
             val localizedPrice = price.localizedString
 
@@ -142,14 +141,14 @@ internal sealed class ProductPlaceholderContentData(
 
                         else -> {
                             val divisor = (when (unit) {
-                                AdaptyPeriodUnit.YEAR -> 365
-                                AdaptyPeriodUnit.MONTH -> 30
+                                YEAR -> 365
+                                MONTH -> 30
                                 else -> 7
                             } * numberOfUnits).toBigDecimal()
 
                             val multiplier = (when (targetUnit) {
-                                AdaptyPeriodUnit.YEAR -> 365
-                                AdaptyPeriodUnit.MONTH -> 30
+                                YEAR -> 365
+                                MONTH -> 30
                                 else -> 7
                             }).toBigDecimal()
 
@@ -160,7 +159,7 @@ internal sealed class ProductPlaceholderContentData(
                     val pricePerPeriodString =
                         pricePerPeriod
                             .setScale(2, RoundingMode.CEILING)
-                            .toPlainString()
+                            .let(numberFormat::format)
                     var startIndex = -1
                     var endIndex = -1
                     for ((i, ch) in localizedPrice.withIndex()) {

@@ -117,9 +117,11 @@ internal class TextComponentHelper(
                                     IconBulletSpan(drawable, spacePx, verticalSpacePx)
                                 }
                                 is Text.Item.BulletedText.TextBullet -> {
-                                    val bulletStr = templateConfig.getString(bullet.text.stringId).orEmpty()
+                                    val bulletText =
+                                        processTextItem(context, templateConfig, bullet.text, textComponent, propertiesBuilder, productPlaceholders)
+                                            ?: SpannableString("")
 
-                                    TextBulletSpan(bulletStr, spacePx, verticalSpacePx)
+                                    TextBulletSpan(bulletText, spacePx, verticalSpacePx)
                                 }
                             }
 

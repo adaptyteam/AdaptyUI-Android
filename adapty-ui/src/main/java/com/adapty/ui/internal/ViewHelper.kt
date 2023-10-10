@@ -169,7 +169,7 @@ internal class ViewHelper(
     }
 
     fun createLoadingView(context: Context): ProgressBar {
-        return ProgressBar(context).apply {
+        return PaywallProgressBar(context).apply {
             id = View.generateViewId()
             layoutParams = LayoutParams(
                 LayoutParams.MATCH_PARENT,
@@ -466,6 +466,7 @@ internal class ViewHelper(
     fun applyTextProperties(view: TextView, properties: TextProperties) {
         view.text = properties.text
         view.setHorizontalGravity(properties.horizontalGravity)
+        view.textAlignment = properties.textAlignment
         properties.textSize?.let(view::setTextSize)
 
         if (properties is TextProperties.Single) {
