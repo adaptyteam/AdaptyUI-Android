@@ -5,7 +5,7 @@ import android.text.Layout
 import android.text.StaticLayout
 import android.util.TypedValue
 import android.view.Gravity
-import android.view.View
+import android.view.ViewTreeObserver.OnPreDrawListener
 import android.widget.TextView
 import androidx.annotation.RestrictTo
 import com.adapty.utils.AdaptyLogLevel
@@ -17,15 +17,15 @@ internal class TextHelper(
 ) {
 
     fun resizeTextOnPreDrawIfNeeded(textView: TextView, retainOriginalHeight: Boolean, onHeightChanged: (() -> Unit)? = null) {
-        textView.addOnLayoutChangeListener(object: View.OnLayoutChangeListener {
+        textView.addOnPreDrawListener(object: OnPreDrawListener {
             private var lastWidth = 0
             private var lastHeight = 0
             private var lastTextLength = 0
             private var retryLastCalculations = false
             private var retryCounter = 0
 
-            override fun onLayoutChange(v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
-                val layout = textView.layout ?: return
+            override fun onPreDraw(): Boolean {
+                val layout = textView.layout ?: return true
 
                 if (lastHeight != textView.height) {
                     lastHeight = textView.height
@@ -38,7 +38,7 @@ internal class TextHelper(
                     lastTextLength = textView.text.length
                     try {
                         if (!isTruncated(textView, layout))
-                            return
+                            return true
 
                         textView.setTextSize(
                             TypedValue.COMPLEX_UNIT_PX,
@@ -60,8 +60,11 @@ internal class TextHelper(
                             retryLastCalculations = false
                             retryCounter = 0
                         }
+                        return true
                     }
+                    return false
                 }
+                return true
             }
         })
     }

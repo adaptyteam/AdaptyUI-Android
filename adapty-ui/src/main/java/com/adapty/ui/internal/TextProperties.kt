@@ -16,6 +16,7 @@ internal sealed class TextProperties(
     val textAlignment
         get() = when (horizontalGravity) {
             Gravity.START -> View.TEXT_ALIGNMENT_VIEW_START
+            Gravity.CENTER_HORIZONTAL -> View.TEXT_ALIGNMENT_CENTER
             else -> View.TEXT_ALIGNMENT_VIEW_END
         }
 

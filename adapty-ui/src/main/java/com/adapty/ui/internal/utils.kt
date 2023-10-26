@@ -7,6 +7,7 @@ import android.text.Layout
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
+import android.view.ViewTreeObserver.OnPreDrawListener
 import android.view.WindowManager
 import android.widget.TextView
 import com.adapty.internal.utils.InternalAdaptyApi
@@ -42,6 +43,21 @@ internal val View.locationOnScreen: IntArray get() = intArrayOf(0,0).also(::getL
 internal val View.topCoord: Int get() = locationOnScreen[1] - translationY.toInt()
 
 internal val View.bottomCoord: Int get() = topCoord + height
+
+internal fun View.addOnPreDrawListener(listener: OnPreDrawListener) {
+    if (isAttachedToWindow)
+        viewTreeObserver.addOnPreDrawListener(listener)
+
+    addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+        override fun onViewAttachedToWindow(v: View?) {
+            viewTreeObserver.addOnPreDrawListener(listener)
+        }
+
+        override fun onViewDetachedFromWindow(v: View?) {
+            viewTreeObserver.removeOnPreDrawListener(listener)
+        }
+    })
+}
 
 internal fun TextView.setHorizontalGravity(horizontalGravity: Int) {
     gravity = (gravity and Gravity.VERTICAL_GRAVITY_MASK) or horizontalGravity

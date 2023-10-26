@@ -2,7 +2,7 @@ package com.adapty.ui.internal
 
 import android.app.Activity
 import android.content.Context
-import android.view.View
+import android.view.ViewTreeObserver.OnPreDrawListener
 import androidx.annotation.RestrictTo
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.constraintlayout.widget.ConstraintSet.BOTTOM
@@ -199,8 +199,8 @@ internal class BasicPaywallRenderer(
                 verticalAnchor.updateView(footerButtons.first())
             }
 
-        contentContainer.addOnLayoutChangeListener(object: View.OnLayoutChangeListener {
-            override fun onLayoutChange(v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
+        contentContainer.addOnPreDrawListener(object: OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
                 if (!paywallScreenProps.areConsumed && contentContainer.height > 0) {
                     val contentBgViewExpectedTop = contentBgView.topCoord
                     val contentBgViewExpectedBottom =
@@ -217,6 +217,7 @@ internal class BasicPaywallRenderer(
                         screenHeight - insets.bottom - STICKY_FOOTER_BOTTOM_MARGIN_DP.dp(context).toInt()
                     )
                 }
+                return true
             }
         })
 
@@ -436,8 +437,8 @@ internal class TransparentPaywallRenderer(
             verticalAnchor.updateView(titleView)
         }
 
-        contentContainer.addOnLayoutChangeListener(object: View.OnLayoutChangeListener {
-            override fun onLayoutChange(v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
+        contentContainer.addOnPreDrawListener(object: OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
                 if (!paywallScreenProps.areConsumed && contentContainer.height > 0) {
                     val contentBgViewExpectedBottom = contentBgView.bottomCoord
                     val contentBgViewExpectedTop = verticalAnchor.view.topCoord - insets.top
@@ -448,6 +449,7 @@ internal class TransparentPaywallRenderer(
                     paywallScreenProps.paywallViewSizeChangeConsumed = true
                     paywallScreenProps.contentSizeChangeConsumed = true
                 }
+                return true
             }
         })
 
@@ -679,8 +681,8 @@ internal class FlatPaywallRenderer(
                 verticalAnchor.updateView(footerButtons.first())
             }
 
-        contentContainer.addOnLayoutChangeListener(object: View.OnLayoutChangeListener {
-            override fun onLayoutChange(v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
+        contentContainer.addOnPreDrawListener(object: OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
                 if (!paywallScreenProps.areConsumed && contentContainer.height > 0) {
                     val contentBgViewExpectedTop = contentBgView.topCoord
                     val contentBgViewExpectedBottom =
@@ -697,6 +699,7 @@ internal class FlatPaywallRenderer(
                         screenHeight - insets.bottom - STICKY_FOOTER_BOTTOM_MARGIN_DP.dp(context).toInt()
                     )
                 }
+                return true
             }
         })
 
