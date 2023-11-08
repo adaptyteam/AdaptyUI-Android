@@ -9,7 +9,7 @@ android {
     defaultConfig {
         minSdk 21
         targetSdk 31
-        buildConfigField 'String', 'VERSION_NAME', "\"2.0.3\""
+        buildConfigField 'String', 'VERSION_NAME', "\"2.0.4\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"

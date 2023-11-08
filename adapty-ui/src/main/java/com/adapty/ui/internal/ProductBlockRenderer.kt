@@ -165,6 +165,7 @@ internal class ProductBlockRenderer(
                         product,
                         templateConfig,
                         interactionListener,
+                        productInfo.isMain,
                     )
                 } else {
                     interactionListener.onProductSelected(product)
@@ -259,6 +260,7 @@ internal class ProductBlockRenderer(
         product: AdaptyPaywallProduct,
         templateConfig: TemplateConfig,
         interactionListener: PaywallUiManager.InteractionListener,
+        isMainProduct: Boolean,
     ) {
         val purchaseButtonFreeTrialTextProperties =
             templateConfig.getPurchaseButtonOfferTitle()?.let { tc ->
@@ -284,11 +286,11 @@ internal class ProductBlockRenderer(
             }
         }
 
-        if (mainProductTag != null) {
+        if (isMainProduct) {
             interactionListener.onProductSelected(product)
             productCell.isSelected = true
 
-            mainProductTag.post { mainProductTag.visibility = View.VISIBLE }
+            mainProductTag?.post { mainProductTag.visibility = View.VISIBLE }
 
             if (purchaseButton != null && purchaseButtonFreeTrialTextProperties != null && product.hasFreeTrial()) {
                 viewHelper.applyTextProperties(

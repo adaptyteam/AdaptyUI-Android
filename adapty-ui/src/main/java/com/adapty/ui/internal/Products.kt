@@ -42,6 +42,7 @@ internal class ProductInfo(
     val button: Component.Button?,
     val tagText: Component.Text?,
     val tagShape: Component.Shape?,
+    val isMain: Boolean,
 ) {
 
     fun getSubtitle(product: AdaptyPaywallProduct): Component.Text? {
@@ -68,6 +69,7 @@ internal class ProductInfo(
                 button = map["button"] as? Component.Button,
                 tagText = (map["tag_text"] as? Component.Text)?.takeIf { isMainProduct },
                 tagShape = (map["tag_shape"] as? Component.Shape)?.takeIf { isMainProduct },
+                isMain = isMainProduct,
             )
         }
     }
