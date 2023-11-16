@@ -299,15 +299,15 @@ internal class LayoutHelper {
     }
 
     fun constrainMainProductTag(
-        mainProductTagView: TextView,
+        productTagView: TextView,
         productCellViewId: Int,
         blockType: Products.BlockType.Multiple,
         constraintSet: ConstraintSet,
     ) {
-        val viewId = mainProductTagView.id
+        val viewId = productTagView.id
 
-        val context = mainProductTagView.context
-        val heightPx = mainProductTagView.textSize + (MAIN_PRODUCT_TAG_VERTICAL_PADDING_DP * 2).dp(context)
+        val context = productTagView.context
+        val heightPx = productTagView.textSize + (PRODUCT_TAG_VERTICAL_PADDING_DP * 2).dp(context)
 
         with(constraintSet) {
             constrainWidth(viewId, MATCH_CONSTRAINT)
@@ -316,7 +316,7 @@ internal class LayoutHelper {
 
             when (blockType) {
                 Products.BlockType.Vertical -> {
-                    val marginEndPx = MAIN_PRODUCT_TAG_END_MARGIN_DP.dp(context).toInt()
+                    val marginEndPx = PRODUCT_TAG_END_MARGIN_DP.dp(context).toInt()
                     connect(viewId, END, productCellViewId, END, marginEndPx)
                     val marginBottomPx = (PRODUCT_CELL_VERTICAL_HEIGHT_DP.dp(context) - heightPx / 2).toInt()
                     connect(viewId, BOTTOM, productCellViewId, BOTTOM, marginBottomPx)

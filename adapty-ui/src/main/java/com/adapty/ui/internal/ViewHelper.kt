@@ -97,7 +97,7 @@ internal class ViewHelper(
                 .also { view -> textHelper.resizeTextOnPreDrawIfNeeded(view, true, onTextViewHeightChangeOnResizeCallback) }
         }
 
-        val mainProductTag = productInfo.tagText?.takeIf { !typeIsSingle }?.let { tagText ->
+        val productTag = productInfo.tagText?.takeIf { !typeIsSingle }?.let { tagText ->
             createMainProductTag(context, tagText, productInfo.tagShape, templateConfig)
                 .also { view -> textHelper.resizeTextOnPreDrawIfNeeded(view, true, onTextViewHeightChangeOnResizeCallback) }
         }
@@ -108,7 +108,7 @@ internal class ViewHelper(
             productSubtitle,
             productSecondTitle,
             productSecondSubtitle,
-            mainProductTag,
+            productTag,
         )
     }
 
@@ -329,7 +329,7 @@ internal class ViewHelper(
                     background = drawableHelper.createDrawable(shape, templateConfig, context)
                 }
 
-                val horizontalPadding = MAIN_PRODUCT_TAG_HORIZONTAL_PADDING_DP.dp(context).toInt()
+                val horizontalPadding = PRODUCT_TAG_HORIZONTAL_PADDING_DP.dp(context).toInt()
                 setPadding(horizontalPadding, paddingTop, horizontalPadding, paddingBottom)
             }
     }

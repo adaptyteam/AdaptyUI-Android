@@ -49,8 +49,6 @@ internal class ProductBlockRenderer(
 
         checkProductNumber(productInfos, paywall)
 
-        val isReverseAddingOrder = templateConfig.isReverseProductAddingOrder(productBlock)
-
         val context = parentView.context
 
         val productViewsBundles = productInfos.map { productInfo ->
@@ -64,19 +62,16 @@ internal class ProductBlockRenderer(
             )
         }
             .takeIf { it.isNotEmpty() }
-            ?.let { list -> if (isReverseAddingOrder) list.reversed() else list }
             ?.onEach { viewsBundle ->
                 viewsBundle.productCell?.let(parentView::addView)
                 viewsBundle.productTitle?.let(parentView::addView)
                 viewsBundle.productSubtitle?.let(parentView::addView)
                 viewsBundle.productSecondTitle?.let(parentView::addView)
                 viewsBundle.productSecondSubtitle?.let(parentView::addView)
-                viewsBundle.mainProductTag?.let(parentView::addView)
+                viewsBundle.productTag?.let(parentView::addView)
             }
 
             return productViewsBundles?.also { productViewsBundles ->
-                val productInfos = if (isReverseAddingOrder) productInfos.reversed() else productInfos
-
                 val fromTopToBottom = templateConfig.renderDirection == TemplateConfig.RenderDirection.TOP_TO_BOTTOM
 
                 val productCells = productViewsBundles.mapNotNull { it.productCell }
@@ -108,10 +103,9 @@ internal class ProductBlockRenderer(
                         products,
                         paywallScreenProps,
                         productViewsBundles,
-                        productInfos,
+                        productBlock,
                         purchaseButton,
                         templateConfig,
-                        isReverseAddingOrder,
                         interactionListener,
                     )
                 }
@@ -121,20 +115,18 @@ internal class ProductBlockRenderer(
     fun fillInnerProductTexts(
         products: List<AdaptyPaywallProduct>,
         paywallScreen: PaywallScreen,
-        productInfos: List<ProductInfo>,
+        productBlock: Products,
         purchaseButton: TextView?,
         templateConfig: TemplateConfig,
-        isReverseAddingOrder: Boolean,
         interactionListener: PaywallUiManager.InteractionListener,
     ) {
         fillInnerProductTexts(
             products,
             paywallScreen.props,
             paywallScreen.productViewsBundles,
-            productInfos,
+            productBlock,
             purchaseButton,
             templateConfig,
-            isReverseAddingOrder,
             interactionListener
         )
     }
@@ -143,24 +135,23 @@ internal class ProductBlockRenderer(
         products: List<AdaptyPaywallProduct>,
         paywallScreenProps: PaywallScreen.Props,
         productViewsBundles: List<ProductViewsBundle>,
-        productInfos: List<ProductInfo>,
+        productBlock: Products,
         purchaseButton: TextView?,
         templateConfig: TemplateConfig,
-        isReverseAddingOrder: Boolean,
         interactionListener: PaywallUiManager.InteractionListener,
     ) {
-        val products = if (isReverseAddingOrder) products.reversed() else products
+        val products = products.withProductLayoutOrdering(templateConfig, productBlock.blockType)
 
         productViewsBundles.forEachIndexed { i, productViewsBundle ->
             val product = products.getOrNull(i)
-            val productInfo = productInfos.getOrNull(i)
+            val productInfo = productBlock.products.getOrNull(i)
             val productCell = productViewsBundle.productCell
             if (product != null && productInfo != null) {
                 if (productCell != null) {
                     updateProductCellWithProduct(
                         productCell,
                         purchaseButton,
-                        productViewsBundle.mainProductTag,
+                        productViewsBundle.productTag,
                         productViewsBundles,
                         product,
                         templateConfig,
@@ -255,7 +246,7 @@ internal class ProductBlockRenderer(
     private fun updateProductCellWithProduct(
         productCell: View,
         purchaseButton: TextView?,
-        mainProductTag: View?,
+        productTag: View?,
         productViewsBundles: List<ProductViewsBundle>,
         product: AdaptyPaywallProduct,
         templateConfig: TemplateConfig,
@@ -286,11 +277,11 @@ internal class ProductBlockRenderer(
             }
         }
 
+        productTag?.post { productTag.visibility = View.VISIBLE }
+
         if (isMainProduct) {
             interactionListener.onProductSelected(product)
             productCell.isSelected = true
-
-            mainProductTag?.post { mainProductTag.visibility = View.VISIBLE }
 
             if (purchaseButton != null && purchaseButtonFreeTrialTextProperties != null && product.hasFreeTrial()) {
                 viewHelper.applyTextProperties(
@@ -381,7 +372,7 @@ internal class ProductBlockRenderer(
             val productSubtitle = bundle?.productSubtitle
             val productSecondTitle = bundle?.productSecondTitle
             val productSecondSubtitle = bundle?.productSecondSubtitle
-            val mainProductTag = bundle?.mainProductTag
+            val productTag = bundle?.productTag
 
             if (productTitle != null) {
                 val anchors = when (blockType) {
@@ -485,9 +476,9 @@ internal class ProductBlockRenderer(
                 layoutHelper.constrainInnerProductText(productSecondSubtitle.id, anchors, constraintSet)
             }
 
-            if (mainProductTag != null) {
-                layoutHelper.constrainMainProductTag(mainProductTag, cell.id, blockType, constraintSet)
-                mainProductTag.post { mainProductTag.visibility = View.INVISIBLE }
+            if (productTag != null) {
+                layoutHelper.constrainMainProductTag(productTag, cell.id, blockType, constraintSet)
+                productTag.post { productTag.visibility = View.INVISIBLE }
             }
         }
     }

@@ -81,17 +81,12 @@ internal class PaywallUiManager(
 
         val productBlock = templateConfig.getProducts()
 
-        val productInfos = productBlock.products
-
-        val isReverseAddingOrder = templateConfig.isReverseProductAddingOrder(productBlock)
-
         productBlockRenderer.fillInnerProductTexts(
             products,
             paywallScreen,
-            productInfos,
+            productBlock,
             purchaseButton.textView,
             templateConfig,
-            isReverseAddingOrder,
             interactionListener,
         )
 

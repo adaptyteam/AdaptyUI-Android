@@ -67,8 +67,8 @@ internal class ProductInfo(
                 secondTitle = map["second_title"] as? Component.Text,
                 secondSubtitle = map["second_subtitle"] as? Component.Text,
                 button = map["button"] as? Component.Button,
-                tagText = (map["tag_text"] as? Component.Text)?.takeIf { isMainProduct },
-                tagShape = (map["tag_shape"] as? Component.Shape)?.takeIf { isMainProduct },
+                tagText = (map["tag_text"] as? Component.Text),
+                tagShape = (map["tag_shape"] as? Component.Shape),
                 isMain = isMainProduct,
             )
         }
@@ -82,7 +82,7 @@ internal class ProductViewsBundle(
     val productSubtitle: TextView?,
     val productSecondTitle: TextView?,
     val productSecondSubtitle: TextView?,
-    val mainProductTag: TextView?,
+    val productTag: TextView?,
 )
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

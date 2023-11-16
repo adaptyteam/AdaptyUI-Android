@@ -43,9 +43,9 @@ internal const val PRODUCT_INNER_TEXTS_HORIZONTAL_SPACING_DP = 2f
 
 internal const val FEATURE_VERTICAL_SPACING_DP = 8f
 
-internal const val MAIN_PRODUCT_TAG_HORIZONTAL_PADDING_DP = 8f
-internal const val MAIN_PRODUCT_TAG_VERTICAL_PADDING_DP = 4f
-internal const val MAIN_PRODUCT_TAG_END_MARGIN_DP = 10f
+internal const val PRODUCT_TAG_HORIZONTAL_PADDING_DP = 8f
+internal const val PRODUCT_TAG_VERTICAL_PADDING_DP = 4f
+internal const val PRODUCT_TAG_END_MARGIN_DP = 10f
 
 internal const val CLOSE_BUTTON_TOP_MARGIN_DP = 24f
 internal const val CLOSE_BUTTON_HORIZONTAL_MARGIN_DP = 24f

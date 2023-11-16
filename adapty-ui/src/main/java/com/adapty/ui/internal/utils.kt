@@ -90,6 +90,13 @@ internal fun AdaptyPaywallProduct.firstDiscountOfferOrNull(): AdaptyProductDisco
     }
 }
 
+internal fun <T> List<T>.withProductLayoutOrdering(
+    templateConfig: TemplateConfig,
+    productBlockType: Products.BlockType,
+): List<T> {
+    return if (templateConfig.isReverseProductAddingOrder(productBlockType)) reversed() else this
+}
+
 private val logExecutor = Executors.newSingleThreadExecutor()
 
 @OptIn(InternalAdaptyApi::class)

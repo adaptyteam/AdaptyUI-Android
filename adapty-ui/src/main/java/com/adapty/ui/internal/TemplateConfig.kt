@@ -78,8 +78,8 @@ internal sealed class TemplateConfig(protected val viewConfig: AdaptyViewConfigu
 
     fun getCloseButton(): Component.Button = getComponent(COMPONENT_KEY_CLOSE_BUTTON)
 
-    fun isReverseProductAddingOrder(products: Products): Boolean {
-        return renderDirection != RenderDirection.TOP_TO_BOTTOM && products.blockType == Products.BlockType.Vertical
+    fun isReverseProductAddingOrder(productBlockType: Products.BlockType): Boolean {
+        return renderDirection != RenderDirection.TOP_TO_BOTTOM && productBlockType == Products.BlockType.Vertical
     }
 
     protected fun <T : Component> getComponent(componentId: String): T {
@@ -129,15 +129,17 @@ internal sealed class TemplateConfig(protected val viewConfig: AdaptyViewConfigu
     fun getProducts(): Products {
         val productBlock = getDefaultStyleOrError().productBlock
 
-        val products = productBlock.orderedItems.filterIsInstance<Component.CustomObject>().mapIndexed { i, rawProductInfo ->
-            ProductInfo.from(rawProductInfo.properties.toMap(), i == productBlock.mainProductIndex)
-        }
-
         val blockType = when (productBlock.type) {
             ProductBlock.Type.SINGLE -> Products.BlockType.Single
             ProductBlock.Type.VERTICAL -> Products.BlockType.Vertical
             ProductBlock.Type.HORIZONTAL -> Products.BlockType.Horizontal
         }
+
+        val products = productBlock.orderedItems.filterIsInstance<Component.CustomObject>()
+            .mapIndexed { i, rawProductInfo ->
+                ProductInfo.from(rawProductInfo.properties.toMap(), i == productBlock.mainProductIndex)
+            }
+            .withProductLayoutOrdering(this, blockType)
 
         return Products(products, blockType)
     }
