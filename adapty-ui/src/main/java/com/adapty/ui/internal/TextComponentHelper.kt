@@ -218,7 +218,7 @@ internal class TextComponentHelper(
             text.contains(currencyCode, true)
                     && currencyCode.isNotBlank()
                     && !currencyCode.equals(currencySymbol, true)
-                    && paint.hasGlyphCompat(currencySymbol) -> {
+                    && currencySymbol.all { paint.hasGlyphCompat(it.toString()) } -> {
                 text.replace(currencyCode, currencySymbol, true)
             }
             else -> text

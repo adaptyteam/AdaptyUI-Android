@@ -67,6 +67,13 @@ internal fun TextView.setVerticalGravity(verticalGravity: Int) {
     gravity = (gravity and Gravity.HORIZONTAL_GRAVITY_MASK) or verticalGravity
 }
 
+internal fun Context.getCurrentLocale() =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        resources.configuration.locales.get(0)
+    } else {
+        resources.configuration.locale
+    }
+
 internal fun AdaptyViewConfiguration.HorizontalAlign.toGravity() =
     when (this) {
         AdaptyViewConfiguration.HorizontalAlign.LEFT -> Gravity.START

@@ -33,7 +33,7 @@ public class AdaptyPaywallView @JvmOverloads constructor(
 
     private val flowKey = "#${hashCode()}#"
 
-    private val presenter = PaywallPresenterFactory.create(flowKey)
+    private val presenter = PaywallPresenterFactory.create(flowKey, context)
 
     @get:JvmSynthetic @set:JvmSynthetic
     internal var eventListener: AdaptyUiEventListener? = null

@@ -18,14 +18,16 @@ import com.adapty.internal.utils.adaptyError
 import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyViewConfiguration
-import java.text.Format
+import java.text.NumberFormat
+import java.util.Currency
+import java.util.Locale
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class ProductBlockRenderer(
     private val viewHelper: ViewHelper,
     private val layoutHelper: LayoutHelper,
     private val textComponentHelper: TextComponentHelper,
-    private val numberFormat: Format,
+    private val locale: Locale,
 ) {
 
     fun render(
@@ -140,6 +142,15 @@ internal class ProductBlockRenderer(
         templateConfig: TemplateConfig,
         interactionListener: PaywallUiManager.InteractionListener,
     ) {
+        val numberFormat = NumberFormat.getInstance(locale)
+            .apply {
+                products.firstOrNull()?.let { product ->
+                    currency = Currency.getInstance(product.price.currencyCode)
+                }
+                minimumFractionDigits = 2
+                isGroupingUsed = true
+            }
+
         val products = products.withProductLayoutOrdering(templateConfig, productBlock.blockType)
 
         productViewsBundles.forEachIndexed { i, productViewsBundle ->

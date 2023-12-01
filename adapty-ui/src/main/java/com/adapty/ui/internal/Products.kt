@@ -13,6 +13,7 @@ import com.adapty.models.AdaptyProductDiscountPhase.PaymentMode
 import com.adapty.models.AdaptyViewConfiguration.Component
 import java.math.RoundingMode
 import java.text.Format
+import java.text.NumberFormat
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class Products(
@@ -91,36 +92,36 @@ internal sealed class ProductPlaceholderContentData(
 ) {
     class Simple(placeholder: String, val value: String): ProductPlaceholderContentData(placeholder)
 
-    class Extended(placeholder: String, val value: String, product: AdaptyPaywallProduct): ProductPlaceholderContentData(placeholder) {
+    class Extended(placeholder: String, val value: String, product: AdaptyPaywallProduct, numberFormat: NumberFormat): ProductPlaceholderContentData(placeholder) {
         val currencyCode = product.price.currencyCode
-        val currencySymbol = product.price.currencySymbol
+        val currencySymbol = numberFormat.currency?.symbol ?: currencyCode
     }
 
     class Drop(placeholder: String): ProductPlaceholderContentData(placeholder)
 
     companion object {
 
-        fun create(product: AdaptyPaywallProduct, numberFormat: Format): List<ProductPlaceholderContentData> {
+        fun create(product: AdaptyPaywallProduct, numberFormat: NumberFormat): List<ProductPlaceholderContentData> {
             val firstDiscountOfferIfExists = product.firstDiscountOfferOrNull()
 
             return listOf(
                 from("</TITLE/>", product.localizedTitle),
-                from("</PRICE/>", product.price.localizedString, product),
-                from("</PRICE_PER_DAY/>", createPricePerPeriodText(product, DAY, numberFormat), product),
-                from("</PRICE_PER_WEEK/>", createPricePerPeriodText(product, WEEK, numberFormat), product),
-                from("</PRICE_PER_MONTH/>", createPricePerPeriodText(product, MONTH, numberFormat), product),
-                from("</PRICE_PER_YEAR/>", createPricePerPeriodText(product, YEAR, numberFormat), product),
-                from("</OFFER_PRICE/>", firstDiscountOfferIfExists?.price?.localizedString, product),
+                from("</PRICE/>", product.price.localizedString, product, numberFormat),
+                from("</PRICE_PER_DAY/>", createPricePerPeriodText(product, DAY, numberFormat), product, numberFormat),
+                from("</PRICE_PER_WEEK/>", createPricePerPeriodText(product, WEEK, numberFormat), product, numberFormat),
+                from("</PRICE_PER_MONTH/>", createPricePerPeriodText(product, MONTH, numberFormat), product, numberFormat),
+                from("</PRICE_PER_YEAR/>", createPricePerPeriodText(product, YEAR, numberFormat), product, numberFormat),
+                from("</OFFER_PRICE/>", firstDiscountOfferIfExists?.price?.localizedString, product, numberFormat),
                 from("</OFFER_PERIOD/>", firstDiscountOfferIfExists?.localizedSubscriptionPeriod),
                 from("</OFFER_NUMBER_OF_PERIOD/>", firstDiscountOfferIfExists?.localizedNumberOfPeriods),
             )
         }
 
-        private fun from(placeholder: String, value: String?, product: AdaptyPaywallProduct? = null): ProductPlaceholderContentData =
+        private fun from(placeholder: String, value: String?, product: AdaptyPaywallProduct? = null, numberFormat: NumberFormat? = null): ProductPlaceholderContentData =
             when {
                 value == null -> Drop(placeholder)
-                product == null -> Simple(placeholder, value)
-                else -> Extended(placeholder, value, product)
+                product == null || numberFormat == null -> Simple(placeholder, value)
+                else -> Extended(placeholder, value, product, numberFormat)
             }
 
         private fun createPricePerPeriodText(product: AdaptyPaywallProduct, targetUnit: AdaptyPeriodUnit, numberFormat: Format): String? {
