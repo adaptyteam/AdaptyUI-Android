@@ -17,8 +17,9 @@ import java.text.NumberFormat
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class Products(
-    val products: List<ProductInfo>,
+    val orderedProducts: List<ProductInfo>,
     val blockType: BlockType,
+    val initiatePurchaseOnTap: Boolean,
 ) {
     sealed class BlockType {
         object Single: BlockType()
@@ -99,21 +100,45 @@ internal sealed class ProductPlaceholderContentData(
 
     class Drop(placeholder: String): ProductPlaceholderContentData(placeholder)
 
+    object Tags {
+        const val title = "</TITLE/>"
+        const val price = "</PRICE/>"
+        const val pricePerDay = "</PRICE_PER_DAY/>"
+        const val pricePerWeek = "</PRICE_PER_WEEK/>"
+        const val pricePerMonth = "</PRICE_PER_MONTH/>"
+        const val pricePerYear = "</PRICE_PER_YEAR/>"
+        const val offerPrice = "</OFFER_PRICE/>"
+        const val offerPeriod = "</OFFER_PERIOD/>"
+        const val offerNumberOfPeriods = "</OFFER_NUMBER_OF_PERIOD/>"
+
+        val all = setOf(
+            title,
+            price,
+            pricePerDay,
+            pricePerWeek,
+            pricePerMonth,
+            pricePerYear,
+            offerPrice,
+            offerPeriod,
+            offerNumberOfPeriods,
+        )
+    }
+
     companion object {
 
         fun create(product: AdaptyPaywallProduct, numberFormat: NumberFormat): List<ProductPlaceholderContentData> {
             val firstDiscountOfferIfExists = product.firstDiscountOfferOrNull()
 
             return listOf(
-                from("</TITLE/>", product.localizedTitle),
-                from("</PRICE/>", product.price.localizedString, product, numberFormat),
-                from("</PRICE_PER_DAY/>", createPricePerPeriodText(product, DAY, numberFormat), product, numberFormat),
-                from("</PRICE_PER_WEEK/>", createPricePerPeriodText(product, WEEK, numberFormat), product, numberFormat),
-                from("</PRICE_PER_MONTH/>", createPricePerPeriodText(product, MONTH, numberFormat), product, numberFormat),
-                from("</PRICE_PER_YEAR/>", createPricePerPeriodText(product, YEAR, numberFormat), product, numberFormat),
-                from("</OFFER_PRICE/>", firstDiscountOfferIfExists?.price?.localizedString, product, numberFormat),
-                from("</OFFER_PERIOD/>", firstDiscountOfferIfExists?.localizedSubscriptionPeriod),
-                from("</OFFER_NUMBER_OF_PERIOD/>", firstDiscountOfferIfExists?.localizedNumberOfPeriods),
+                from(Tags.title, product.localizedTitle),
+                from(Tags.price, product.price.localizedString, product, numberFormat),
+                from(Tags.pricePerDay, createPricePerPeriodText(product, DAY, numberFormat), product, numberFormat),
+                from(Tags.pricePerWeek, createPricePerPeriodText(product, WEEK, numberFormat), product, numberFormat),
+                from(Tags.pricePerMonth, createPricePerPeriodText(product, MONTH, numberFormat), product, numberFormat),
+                from(Tags.pricePerYear, createPricePerPeriodText(product, YEAR, numberFormat), product, numberFormat),
+                from(Tags.offerPrice, firstDiscountOfferIfExists?.price?.localizedString, product, numberFormat),
+                from(Tags.offerPeriod, firstDiscountOfferIfExists?.localizedSubscriptionPeriod),
+                from(Tags.offerNumberOfPeriods, firstDiscountOfferIfExists?.localizedNumberOfPeriods),
             )
         }
 

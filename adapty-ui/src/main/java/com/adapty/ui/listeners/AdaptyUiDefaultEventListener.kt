@@ -6,6 +6,8 @@ import android.net.Uri
 import com.adapty.errors.AdaptyError
 import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyProfile
+import com.adapty.models.AdaptyPurchasedInfo
+import com.adapty.models.AdaptySubscriptionUpdateParameters
 import com.adapty.ui.AdaptyPaywallView
 import com.adapty.ui.AdaptyUI
 import com.adapty.ui.internal.LOG_PREFIX_ERROR
@@ -27,6 +29,13 @@ public open class AdaptyUiDefaultEventListener : AdaptyUiEventListener {
             }
             is AdaptyUI.Action.Custom -> Unit
         }
+    }
+
+    override fun onAwaitingSubscriptionUpdateParams(
+        product: AdaptyPaywallProduct,
+        view: AdaptyPaywallView
+    ): AdaptySubscriptionUpdateParameters? {
+        return null
     }
 
     public override fun onLoadingProductsFailure(
@@ -56,7 +65,7 @@ public open class AdaptyUiDefaultEventListener : AdaptyUiEventListener {
     ) {}
 
     public override fun onPurchaseSuccess(
-        profile: AdaptyProfile?,
+        purchasedInfo: AdaptyPurchasedInfo?,
         product: AdaptyPaywallProduct,
         view: AdaptyPaywallView,
     ) {
@@ -72,6 +81,8 @@ public open class AdaptyUiDefaultEventListener : AdaptyUiEventListener {
         error: AdaptyError,
         view: AdaptyPaywallView,
     ) {}
+
+    override fun onRestoreStarted(view: AdaptyPaywallView)  {}
 
     public override fun onRestoreSuccess(
         profile: AdaptyProfile,

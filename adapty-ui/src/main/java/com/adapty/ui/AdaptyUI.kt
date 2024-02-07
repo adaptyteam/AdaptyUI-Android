@@ -11,6 +11,7 @@ import com.adapty.models.AdaptyViewConfiguration
 import com.adapty.ui.listeners.AdaptyUiDefaultEventListener
 import com.adapty.ui.listeners.AdaptyUiEventListener
 import com.adapty.ui.listeners.AdaptyUiPersonalizedOfferResolver
+import com.adapty.ui.listeners.AdaptyUiTagResolver
 
 public object AdaptyUI {
 
@@ -47,9 +48,12 @@ public object AdaptyUI {
      * you can implement [AdaptyUiPersonalizedOfferResolver] and pass your own logic
      * that maps [AdaptyPaywallProduct] to `true`, if the price of the product is personalized, otherwise `false`.
      *
+     * @param[tagResolver] If you are going to use custom tags functionality, pass the resolver function here.
+     *
      * @return An [AdaptyPaywallView] object, representing the requested paywall screen.
      */
     @JvmStatic
+    @JvmOverloads
     @UiThread
     public fun getPaywallView(
         activity: Activity,
@@ -59,6 +63,7 @@ public object AdaptyUI {
         insets: AdaptyPaywallInsets,
         eventListener: AdaptyUiEventListener,
         personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver = AdaptyUiPersonalizedOfferResolver.DEFAULT,
+        tagResolver: AdaptyUiTagResolver = AdaptyUiTagResolver.DEFAULT,
     ): AdaptyPaywallView {
         return AdaptyPaywallView(activity).apply {
             id = View.generateViewId()
@@ -71,6 +76,7 @@ public object AdaptyUI {
                 viewConfiguration,
                 insets,
                 personalizedOfferResolver,
+                tagResolver,
             )
         }
     }

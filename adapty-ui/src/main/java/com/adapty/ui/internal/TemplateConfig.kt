@@ -6,10 +6,13 @@ import androidx.annotation.RestrictTo
 import com.adapty.errors.AdaptyErrorCode
 import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.internal.utils.adaptyError
+import com.adapty.internal.utils.getOrderedOriginalProductIds
+import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyViewConfiguration
 import com.adapty.models.AdaptyViewConfiguration.Asset
 import com.adapty.models.AdaptyViewConfiguration.Component
 import com.adapty.models.AdaptyViewConfiguration.ProductBlock
+import com.adapty.ui.listeners.AdaptyUiTagResolver
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class BasicTemplateConfig(viewConfig: AdaptyViewConfiguration): TemplateConfig(viewConfig) {
@@ -103,8 +106,28 @@ internal sealed class TemplateConfig(protected val viewConfig: AdaptyViewConfigu
         )
     }
 
-    fun getString(strId: String): String? =
+    fun getString(strId: String, tagResolver: AdaptyUiTagResolver): String? =
         viewConfig.getString(strId)
+            ?.let { str ->
+                if (!str.hasTags)
+                    return@let str.value
+
+                var strValue = str.value
+                val foundTags = mutableSetOf<String>()
+                customTagsMatcher.findAll(strValue).forEach { result ->
+                    val tag = result.value
+                    val tagIsUnknown = tagResolver.replacement(tag) == null && tag !in ProductPlaceholderContentData.Tags.all
+                    if (tagIsUnknown && str.fallback != null)
+                        return@let str.fallback
+                    foundTags.add(tag)
+                }
+                for (tag in foundTags) {
+                    tagResolver.replacement(tag)?.let { replacement ->
+                        strValue = strValue.replace(tag, replacement)
+                    }
+                }
+                strValue
+            }
 
     fun isHardPaywall(): Boolean = viewConfig.isHard
 
@@ -126,7 +149,7 @@ internal sealed class TemplateConfig(protected val viewConfig: AdaptyViewConfigu
         }
     }
 
-    fun getProducts(): Products {
+    fun getProductBlock(paywall: AdaptyPaywall): Products {
         val productBlock = getDefaultStyleOrError().productBlock
 
         val blockType = when (productBlock.type) {
@@ -135,13 +158,16 @@ internal sealed class TemplateConfig(protected val viewConfig: AdaptyViewConfigu
             ProductBlock.Type.HORIZONTAL -> Products.BlockType.Horizontal
         }
 
-        val products = productBlock.orderedItems.filterIsInstance<Component.CustomObject>()
-            .mapIndexed { i, rawProductInfo ->
-                ProductInfo.from(rawProductInfo.properties.toMap(), i == productBlock.mainProductIndex)
+        val orderedProducts = getOrderedOriginalProductIds(paywall)
+            .mapIndexed { i, productId ->
+                productBlock.products[productId]?.let { productObject ->
+                    ProductInfo.from(productObject.properties, i == productBlock.mainProductIndex)
+                }
             }
+            .filterNotNull()
             .withProductLayoutOrdering(this, blockType)
 
-        return Products(products, blockType)
+        return Products(orderedProducts, blockType, productBlock.initiatePurchaseOnTap)
     }
 
     fun getFooterButtons(): List<Component.Button> {
@@ -170,6 +196,8 @@ internal sealed class TemplateConfig(protected val viewConfig: AdaptyViewConfigu
                 )
             }
         }
+
+        private val customTagsMatcher = "</[a-zA-Z_0-9-]+/>".toRegex()
     }
 
     enum class RenderDirection {

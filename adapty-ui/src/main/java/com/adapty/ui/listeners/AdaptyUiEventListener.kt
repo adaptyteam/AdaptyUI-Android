@@ -4,6 +4,8 @@ import android.app.Activity
 import com.adapty.errors.AdaptyError
 import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyProfile
+import com.adapty.models.AdaptyPurchasedInfo
+import com.adapty.models.AdaptySubscriptionUpdateParameters
 import com.adapty.ui.AdaptyPaywallView
 import com.adapty.ui.AdaptyUI
 
@@ -33,6 +35,23 @@ public interface AdaptyUiEventListener {
      * @param[view] An [AdaptyPaywallView] within which the event occurred.
      */
     public fun onActionPerformed(action: AdaptyUI.Action, view: AdaptyPaywallView)
+
+    /**
+     * This callback is invoked when user initiates the purchase process, providing the ability
+     * to supply an [AdaptySubscriptionUpdateParameters] object.
+     * This is used when you need one subscription to be replaced with another.
+     *
+     * @param[product] An [AdaptyPaywallProduct] of the purchase.
+     *
+     * @param[view] An [AdaptyPaywallView] within which the event occurred.
+     *
+     * @return An [AdaptySubscriptionUpdateParameters] object, used when
+     * you need a subscription to be replaced with another one, otherwise `null`, [read more](https://docs.adapty.io/docs/android-making-purchases#change-subscription).
+     */
+    public fun onAwaitingSubscriptionUpdateParams(
+        product: AdaptyPaywallProduct,
+        view: AdaptyPaywallView,
+    ): AdaptySubscriptionUpdateParameters?
 
     /**
      * This callback is invoked in case of errors during the products loading process.
@@ -104,14 +123,15 @@ public interface AdaptyUiEventListener {
      * calling [onBackPressed][Activity.onBackPressed] method of
      * the [Activity] the [AdaptyPaywallView] is attached to.
      *
-     * @param[profile] An [AdaptyProfile] object containing up to date information about the user.
+     * @param[purchasedInfo] An [AdaptyPurchasedInfo] object containing up to date information
+     * about the purchase and the user's profile.
      *
      * @param[product] An [AdaptyPaywallProduct] of the purchase.
      *
      * @param[view] An [AdaptyPaywallView] within which the event occurred.
      */
     public fun onPurchaseSuccess(
-        profile: AdaptyProfile?,
+        purchasedInfo: AdaptyPurchasedInfo?,
         product: AdaptyPaywallProduct,
         view: AdaptyPaywallView,
     )
@@ -137,6 +157,15 @@ public interface AdaptyUiEventListener {
      */
     public fun onRestoreFailure(
         error: AdaptyError,
+        view: AdaptyPaywallView,
+    )
+
+    /**
+     * This callback is invoked when user initiates the restore process.
+     *
+     * @param[view] An [AdaptyPaywallView] within which the event occurred.
+     */
+    public fun onRestoreStarted(
         view: AdaptyPaywallView,
     )
 

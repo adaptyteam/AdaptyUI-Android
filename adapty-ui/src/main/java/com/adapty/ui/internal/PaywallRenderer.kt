@@ -16,6 +16,7 @@ import com.adapty.models.AdaptyViewConfiguration.Component
 import com.adapty.models.AdaptyViewConfiguration.Component.Shape
 import com.adapty.ui.AdaptyPaywallInsets
 import com.adapty.ui.AdaptyPaywallView
+import com.adapty.ui.listeners.AdaptyUiTagResolver
 import kotlin.math.abs
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -31,6 +32,7 @@ internal class BasicPaywallRenderer(
         products: List<AdaptyPaywallProduct>?,
         paywallView: AdaptyPaywallView,
         insets: AdaptyPaywallInsets,
+        tagResolver: AdaptyUiTagResolver,
         actionListener: (Component.Button.Action) -> Unit,
         interactionListener: PaywallUiManager.InteractionListener,
     ): PaywallScreen {
@@ -92,7 +94,7 @@ internal class BasicPaywallRenderer(
         }
 
         templateConfig.getTitle()?.let { titleTextComponent ->
-            val titleView = viewHelper.createView(context, titleTextComponent, templateConfig)
+            val titleView = viewHelper.createView(context, titleTextComponent, templateConfig, tagResolver)
                 .also(contentContainer::addView)
 
             layoutHelper.constrain(
@@ -108,7 +110,7 @@ internal class BasicPaywallRenderer(
         }
 
         templateConfig.getFeatures()?.let { features ->
-            val featureUIBlock = viewHelper.createFeatureUiBlock(context, features, templateConfig)
+            val featureUIBlock = viewHelper.createFeatureUiBlock(context, features, templateConfig, tagResolver)
 
             when (featureUIBlock) {
                 is FeatureUIBlock.List -> {
@@ -140,6 +142,7 @@ internal class BasicPaywallRenderer(
             context,
             templateConfig.getPurchaseButton(),
             templateConfig,
+            tagResolver,
             actionListener,
         )
             .also { view ->
@@ -157,6 +160,7 @@ internal class BasicPaywallRenderer(
             paywallScreenProps,
             edgeMargin,
             constraintSet,
+            tagResolver,
             interactionListener,
             onTextViewHeightChangeOnResizeCallback,
         )
@@ -183,6 +187,7 @@ internal class BasicPaywallRenderer(
                         context,
                         buttonComponent,
                         templateConfig,
+                        tagResolver,
                         actionListener,
                         onTextViewHeightChangeOnResizeCallback,
                     )
@@ -231,6 +236,7 @@ internal class BasicPaywallRenderer(
                 closeButtonComponent,
                 templateConfig,
                 insets,
+                tagResolver,
                 actionListener
             )
                 .also(paywallView::addView)
@@ -274,6 +280,7 @@ internal class TransparentPaywallRenderer(
         products: List<AdaptyPaywallProduct>?,
         paywallView: AdaptyPaywallView,
         insets: AdaptyPaywallInsets,
+        tagResolver: AdaptyUiTagResolver,
         actionListener: (Component.Button.Action) -> Unit,
         interactionListener: PaywallUiManager.InteractionListener,
     ): PaywallScreen {
@@ -336,6 +343,7 @@ internal class TransparentPaywallRenderer(
                         context,
                         buttonComponent,
                         templateConfig,
+                        tagResolver,
                         actionListener,
                         onTextViewHeightChangeOnResizeCallback,
                     )
@@ -356,6 +364,7 @@ internal class TransparentPaywallRenderer(
             context,
             templateConfig.getPurchaseButton(),
             templateConfig,
+            tagResolver,
             actionListener,
         )
             .also { view ->
@@ -384,6 +393,7 @@ internal class TransparentPaywallRenderer(
             paywallScreenProps,
             edgeMargin,
             constraintSet,
+            tagResolver,
             interactionListener,
             onTextViewHeightChangeOnResizeCallback,
         )
@@ -393,7 +403,7 @@ internal class TransparentPaywallRenderer(
         purchaseButton.addToViewGroup(contentContainer)
 
         templateConfig.getFeatures()?.let { features ->
-            val featureUIBlock = viewHelper.createFeatureUiBlock(context, features, templateConfig)
+            val featureUIBlock = viewHelper.createFeatureUiBlock(context, features, templateConfig, tagResolver)
 
             when (featureUIBlock) {
                 is FeatureUIBlock.List -> {
@@ -422,7 +432,7 @@ internal class TransparentPaywallRenderer(
         }
 
         templateConfig.getTitle()?.let { titleTextComponent ->
-            val titleView = viewHelper.createView(context, titleTextComponent, templateConfig)
+            val titleView = viewHelper.createView(context, titleTextComponent, templateConfig, tagResolver)
                 .also(contentContainer::addView)
 
             layoutHelper.constrain(
@@ -463,6 +473,7 @@ internal class TransparentPaywallRenderer(
                 closeButtonComponent,
                 templateConfig,
                 insets,
+                tagResolver,
                 actionListener
             )
                 .also(paywallView::addView)
@@ -494,6 +505,7 @@ internal class FlatPaywallRenderer(
         products: List<AdaptyPaywallProduct>?,
         paywallView: AdaptyPaywallView,
         insets: AdaptyPaywallInsets,
+        tagResolver: AdaptyUiTagResolver,
         actionListener: (Component.Button.Action) -> Unit,
         interactionListener: PaywallUiManager.InteractionListener,
     ): PaywallScreen {
@@ -574,7 +586,7 @@ internal class FlatPaywallRenderer(
         }
 
         templateConfig.getTitle()?.let { titleTextComponent ->
-            val titleView = viewHelper.createView(context, titleTextComponent, templateConfig)
+            val titleView = viewHelper.createView(context, titleTextComponent, templateConfig, tagResolver)
                 .also(contentContainer::addView)
 
             layoutHelper.constrain(
@@ -590,7 +602,7 @@ internal class FlatPaywallRenderer(
         }
 
         templateConfig.getFeatures()?.let { features ->
-            val featureUIBlock = viewHelper.createFeatureUiBlock(context, features, templateConfig)
+            val featureUIBlock = viewHelper.createFeatureUiBlock(context, features, templateConfig, tagResolver)
 
             when (featureUIBlock) {
                 is FeatureUIBlock.List -> {
@@ -622,6 +634,7 @@ internal class FlatPaywallRenderer(
             context,
             templateConfig.getPurchaseButton(),
             templateConfig,
+            tagResolver,
             actionListener,
         )
             .also { view ->
@@ -639,6 +652,7 @@ internal class FlatPaywallRenderer(
             paywallScreenProps,
             edgeMargin,
             constraintSet,
+            tagResolver,
             interactionListener,
             onTextViewHeightChangeOnResizeCallback,
         )
@@ -665,6 +679,7 @@ internal class FlatPaywallRenderer(
                         context,
                         buttonComponent,
                         templateConfig,
+                        tagResolver,
                         actionListener,
                         onTextViewHeightChangeOnResizeCallback,
                     )
@@ -713,6 +728,7 @@ internal class FlatPaywallRenderer(
                 closeButtonComponent,
                 templateConfig,
                 insets,
+                tagResolver,
                 actionListener
             )
                 .also(paywallView::addView)
@@ -744,6 +760,7 @@ internal sealed class PaywallRenderer(
         products: List<AdaptyPaywallProduct>?,
         paywallView: AdaptyPaywallView,
         insets: AdaptyPaywallInsets,
+        tagResolver: AdaptyUiTagResolver,
         actionListener: (Component.Button.Action) -> Unit,
         interactionListener: PaywallUiManager.InteractionListener,
     ): PaywallScreen

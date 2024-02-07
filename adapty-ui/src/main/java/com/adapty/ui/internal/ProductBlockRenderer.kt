@@ -18,6 +18,7 @@ import com.adapty.internal.utils.adaptyError
 import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyViewConfiguration
+import com.adapty.ui.listeners.AdaptyUiTagResolver
 import java.text.NumberFormat
 import java.util.Currency
 import java.util.Locale
@@ -41,13 +42,14 @@ internal class ProductBlockRenderer(
         paywallScreenProps: PaywallScreen.Props,
         edgeMargin: Int,
         constraintSet: ConstraintSet,
+        tagResolver: AdaptyUiTagResolver,
         interactionListener: PaywallUiManager.InteractionListener,
         onTextViewHeightChangeOnResizeCallback: () -> Unit,
     ): List<ProductViewsBundle> {
-        val productBlock = templateConfig.getProducts()
+        val productBlock = templateConfig.getProductBlock(paywall)
 
-        val productInfos = productBlock.products
         val blockType = productBlock.blockType
+        val productInfos = productBlock.orderedProducts.withProductLayoutOrdering(templateConfig, blockType)
 
         checkProductNumber(productInfos, paywall)
 
@@ -59,6 +61,7 @@ internal class ProductBlockRenderer(
                 productInfo,
                 blockType,
                 templateConfig,
+                tagResolver,
                 actionListener,
                 onTextViewHeightChangeOnResizeCallback,
             )
@@ -108,6 +111,7 @@ internal class ProductBlockRenderer(
                         productBlock,
                         purchaseButton,
                         templateConfig,
+                        tagResolver,
                         interactionListener,
                     )
                 }
@@ -120,6 +124,7 @@ internal class ProductBlockRenderer(
         productBlock: Products,
         purchaseButton: TextView?,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
         interactionListener: PaywallUiManager.InteractionListener,
     ) {
         fillInnerProductTexts(
@@ -129,6 +134,7 @@ internal class ProductBlockRenderer(
             productBlock,
             purchaseButton,
             templateConfig,
+            tagResolver,
             interactionListener
         )
     }
@@ -140,6 +146,7 @@ internal class ProductBlockRenderer(
         productBlock: Products,
         purchaseButton: TextView?,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
         interactionListener: PaywallUiManager.InteractionListener,
     ) {
         val numberFormat = NumberFormat.getInstance(locale)
@@ -152,10 +159,12 @@ internal class ProductBlockRenderer(
             }
 
         val products = products.withProductLayoutOrdering(templateConfig, productBlock.blockType)
+        val productInfos = productBlock.orderedProducts.withProductLayoutOrdering(templateConfig, productBlock.blockType)
 
         productViewsBundles.forEachIndexed { i, productViewsBundle ->
             val product = products.getOrNull(i)
-            val productInfo = productBlock.products.getOrNull(i)
+            val productInfo = productInfos.getOrNull(i)
+            val initiatePurchaseOnTap = productBlock.initiatePurchaseOnTap
             val productCell = productViewsBundle.productCell
             if (product != null && productInfo != null) {
                 if (productCell != null) {
@@ -166,8 +175,10 @@ internal class ProductBlockRenderer(
                         productViewsBundles,
                         product,
                         templateConfig,
+                        tagResolver,
                         interactionListener,
                         productInfo.isMain,
+                        initiatePurchaseOnTap,
                     )
                 } else {
                     interactionListener.onProductSelected(product)
@@ -178,7 +189,8 @@ internal class ProductBlockRenderer(
                                 textComponentHelper.processTextComponent(
                                     purchaseButton.context,
                                     tc,
-                                    templateConfig
+                                    templateConfig,
+                                    tagResolver,
                                 )
                             }
 
@@ -198,6 +210,7 @@ internal class ProductBlockRenderer(
                         productViewsBundle.productTitle,
                         productInfo.title,
                         templateConfig,
+                        tagResolver,
                         productPlaceholders,
                     )
 
@@ -206,6 +219,7 @@ internal class ProductBlockRenderer(
                         productViewsBundle.productSubtitle,
                         productInfo.getSubtitle(product),
                         templateConfig,
+                        tagResolver,
                         productPlaceholders,
                     )
 
@@ -214,6 +228,7 @@ internal class ProductBlockRenderer(
                         productViewsBundle.productSecondTitle,
                         productInfo.secondTitle,
                         templateConfig,
+                        tagResolver,
                         productPlaceholders,
                     )
 
@@ -222,6 +237,7 @@ internal class ProductBlockRenderer(
                         productViewsBundle.productSecondSubtitle,
                         productInfo.secondSubtitle,
                         templateConfig,
+                        tagResolver,
                         productPlaceholders,
                     )
             } else {
@@ -237,6 +253,7 @@ internal class ProductBlockRenderer(
         textView: TextView,
         textComponent: AdaptyViewConfiguration.Component.Text?,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
         productPlaceholders: List<ProductPlaceholderContentData>,
     ) {
         if (textComponent == null) return
@@ -245,6 +262,7 @@ internal class ProductBlockRenderer(
             textView.context,
             textComponent,
             templateConfig,
+            tagResolver,
             productPlaceholders,
         )
 
@@ -261,31 +279,36 @@ internal class ProductBlockRenderer(
         productViewsBundles: List<ProductViewsBundle>,
         product: AdaptyPaywallProduct,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
         interactionListener: PaywallUiManager.InteractionListener,
         isMainProduct: Boolean,
+        initiatePurchaseOnTap: Boolean,
     ) {
         val purchaseButtonFreeTrialTextProperties =
             templateConfig.getPurchaseButtonOfferTitle()?.let { tc ->
-                textComponentHelper.processTextComponent(productCell.context, tc, templateConfig)
+                textComponentHelper.processTextComponent(productCell.context, tc, templateConfig, tagResolver)
             }
         val purchaseButtonRegularTextProperties = purchaseButtonFreeTrialTextProperties?.let {
             templateConfig.getPurchaseButton().title?.let { tc ->
-                textComponentHelper.processTextComponent(productCell.context, tc, templateConfig)
+                textComponentHelper.processTextComponent(productCell.context, tc, templateConfig, tagResolver)
             }
         }
 
         productCell.setOnClickListener {
-            if (productCell.isSelected) return@setOnClickListener
-            productViewsBundles.forEach { bundle -> bundle.productCell?.isSelected = false }
-            interactionListener.onProductSelected(product)
-            productCell.isSelected = true
+            if (!productCell.isSelected) {
+                productViewsBundles.forEach { bundle -> bundle.productCell?.isSelected = false }
+                interactionListener.onProductSelected(product)
+                productCell.isSelected = true
 
-            if (purchaseButton != null && purchaseButtonFreeTrialTextProperties != null && purchaseButtonRegularTextProperties != null) {
-                viewHelper.applyTextProperties(
-                    purchaseButton,
-                    if (product.hasFreeTrial()) purchaseButtonFreeTrialTextProperties else purchaseButtonRegularTextProperties,
-                )
+                if (purchaseButton != null && purchaseButtonFreeTrialTextProperties != null && purchaseButtonRegularTextProperties != null) {
+                    viewHelper.applyTextProperties(
+                        purchaseButton,
+                        if (product.hasFreeTrial()) purchaseButtonFreeTrialTextProperties else purchaseButtonRegularTextProperties,
+                    )
+                }
             }
+            if (initiatePurchaseOnTap)
+                interactionListener.onPurchaseButtonClicked()
         }
 
         productTag?.post { productTag.visibility = View.VISIBLE }

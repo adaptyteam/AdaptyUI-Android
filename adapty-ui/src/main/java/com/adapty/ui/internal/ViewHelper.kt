@@ -21,6 +21,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.adapty.models.AdaptyViewConfiguration.Asset
 import com.adapty.models.AdaptyViewConfiguration.Component
 import com.adapty.ui.AdaptyPaywallInsets
+import com.adapty.ui.listeners.AdaptyUiTagResolver
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class ViewHelper(
@@ -29,14 +30,15 @@ internal class ViewHelper(
     private val textComponentHelper: TextComponentHelper,
 ) {
 
-    fun createView(context: Context, textComponent: Component.Text, templateConfig: TemplateConfig): TextView {
+    fun createView(context: Context, textComponent: Component.Text, templateConfig: TemplateConfig, tagResolver: AdaptyUiTagResolver): TextView {
         return TextView(context)
             .also { view ->
                 view.id = View.generateViewId()
 
-                val textProperties = textComponentHelper.processTextComponent(context, textComponent, templateConfig)
+                val textProperties = textComponentHelper.processTextComponent(context, textComponent, templateConfig, tagResolver)
 
                 applyTextProperties(view, textProperties)
+                fixItalicClipping(view)
             }
     }
 
@@ -44,15 +46,17 @@ internal class ViewHelper(
         context: Context,
         buttonComponent: Component.Button,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
         actionListener: (Component.Button.Action) -> Unit,
         addRipple: Boolean = true,
     ): TextView {
         val view = TextView(context)
         view.id = View.generateViewId()
         applyButtonProperties(view, buttonComponent, templateConfig, actionListener, addRipple)
+        fixItalicClipping(view)
 
         buttonComponent.title?.let { title ->
-            val textProperties = textComponentHelper.processTextComponent(context, title, templateConfig)
+            val textProperties = textComponentHelper.processTextComponent(context, title, templateConfig, tagResolver)
             applyTextProperties(view, textProperties)
         }
 
@@ -64,17 +68,18 @@ internal class ViewHelper(
         productInfo: ProductInfo,
         blockType: Products.BlockType,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
         actionListener: (Component.Button.Action) -> Unit,
         onTextViewHeightChangeOnResizeCallback: () -> Unit,
     ): ProductViewsBundle {
         val typeIsSingle = blockType == Products.BlockType.Single
 
         val productCell = productInfo.button?.takeIf { !typeIsSingle }?.let { button ->
-            createView(context, button, templateConfig, actionListener, addRipple = false)
+            createView(context, button, templateConfig, tagResolver, actionListener, addRipple = false)
         }
 
         val productTitle = productInfo.title?.let { text ->
-            createInnerProductText(context, text, templateConfig)
+            createInnerProductText(context, text, templateConfig, tagResolver)
                 .also { view -> textHelper.resizeTextOnPreDrawIfNeeded(view, true, onTextViewHeightChangeOnResizeCallback) }
         }
 
@@ -84,21 +89,22 @@ internal class ViewHelper(
                 view.maxLines = 2
                 view.ellipsize = TruncateAt.END
                 textHelper.resizeTextOnPreDrawIfNeeded(view, true, onTextViewHeightChangeOnResizeCallback)
+                fixItalicClipping(view)
             }
         }
 
         val productSecondTitle = productInfo.secondTitle?.let { text ->
-            createInnerProductText(context, text, templateConfig)
+            createInnerProductText(context, text, templateConfig, tagResolver)
                 .also { view -> textHelper.resizeTextOnPreDrawIfNeeded(view, true, onTextViewHeightChangeOnResizeCallback) }
         }
 
         val productSecondSubtitle = productInfo.secondSubtitle?.takeIf { !typeIsSingle }?.let { text ->
-            createInnerProductText(context, text, templateConfig)
+            createInnerProductText(context, text, templateConfig, tagResolver)
                 .also { view -> textHelper.resizeTextOnPreDrawIfNeeded(view, true, onTextViewHeightChangeOnResizeCallback) }
         }
 
         val productTag = productInfo.tagText?.takeIf { !typeIsSingle }?.let { tagText ->
-            createMainProductTag(context, tagText, productInfo.tagShape, templateConfig)
+            createMainProductTag(context, tagText, productInfo.tagShape, templateConfig, tagResolver)
                 .also { view -> textHelper.resizeTextOnPreDrawIfNeeded(view, true, onTextViewHeightChangeOnResizeCallback) }
         }
 
@@ -116,10 +122,11 @@ internal class ViewHelper(
         context: Context,
         features: Features,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
     ): FeatureUIBlock {
         return when (features) {
             is Features.List -> {
-                val textView = createView(context, features.textComponent, templateConfig)
+                val textView = createView(context, features.textComponent, templateConfig, tagResolver)
 
                 FeatureUIBlock.List(textView)
             }
@@ -128,7 +135,7 @@ internal class ViewHelper(
                 val timelineTextStartMarginPx = TIMELINE_TEXT_START_MARGIN_DP.dp(context).toInt()
 
                 val cells = features.timelineEntries.map { timelineEntry ->
-                    val textView = createView(context, timelineEntry.text, templateConfig)
+                    val textView = createView(context, timelineEntry.text, templateConfig, tagResolver)
                     val startDrawable = drawableHelper.createTimelineDrawable(timelineEntry, templateConfig, context)
 
                     val image = View(context)
@@ -191,6 +198,7 @@ internal class ViewHelper(
             ).apply {
                 minHeight?.let(::setMinHeight)
             }
+            clipChildren = false
         }
     }
 
@@ -239,6 +247,7 @@ internal class ViewHelper(
         buttonComponent: Component.Button,
         templateConfig: TemplateConfig,
         insets: AdaptyPaywallInsets,
+        tagResolver: AdaptyUiTagResolver,
         actionListener: (Component.Button.Action) -> Unit,
     ): View {
         val height = CLOSE_BUTTON_HEIGHT_DP.dp(context).toInt()
@@ -247,14 +256,14 @@ internal class ViewHelper(
         return if (title is Component.Text) {
             width = LayoutParams.WRAP_CONTENT
             val horizontalPadding = CLOSE_BUTTON_TEXT_HORIZONTAL_PADDING_DP.dp(context).toInt()
-            createView(context, buttonComponent, templateConfig, actionListener)
+            createView(context, buttonComponent, templateConfig, tagResolver, actionListener)
                 .apply {
                     setPadding(horizontalPadding, paddingTop, horizontalPadding, paddingBottom)
                     setVerticalGravity(Gravity.CENTER_VERTICAL)
                 }
         } else {
             width = height
-            createView(context, buttonComponent, templateConfig, actionListener)
+            createView(context, buttonComponent, templateConfig, tagResolver, actionListener)
                 .also { view ->
                     buttonComponent.shape?.backgroundAssetId?.let { assetId ->
                         view.background = BitmapDrawable(
@@ -289,6 +298,7 @@ internal class ViewHelper(
         context: Context,
         buttonComponent: Component.Button,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
         actionListener: (Component.Button.Action) -> Unit,
     ): ComplexButton {
         val bgView = View(context).apply {
@@ -297,7 +307,7 @@ internal class ViewHelper(
         }
 
         val textView = buttonComponent.title?.let { title ->
-            createView(context, title, templateConfig)
+            createView(context, title, templateConfig, tagResolver)
                 .apply {
                     isClickable = false
                     isFocusable = false
@@ -318,8 +328,9 @@ internal class ViewHelper(
         textComponent: Component.Text,
         shapeComponent: Component.Shape?,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
     ): TextView {
-        return createView(context, textComponent, templateConfig)
+        return createView(context, textComponent, templateConfig, tagResolver)
             .apply {
                 makeSingleLine(this)
 
@@ -338,12 +349,13 @@ internal class ViewHelper(
         context: Context,
         textComponent: Component.Text,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
     ): TextView {
         return TextView(context)
             .also { view ->
                 view.id = View.generateViewId()
 
-                val properties = textComponentHelper.processTextComponent(context, textComponent, templateConfig)
+                val properties = textComponentHelper.processTextComponent(context, textComponent, templateConfig, tagResolver)
 
                 view.setHorizontalGravity(properties.horizontalGravity)
                 properties.textSize?.let(view::setTextSize)
@@ -357,6 +369,7 @@ internal class ViewHelper(
                 view.includeFontPadding = false
 
                 makeSingleLine(view)
+                fixItalicClipping(view)
             }
     }
 
@@ -364,10 +377,11 @@ internal class ViewHelper(
         context: Context,
         buttonComponent: Component.Button,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
         actionListener: (Component.Button.Action) -> Unit,
         onTextViewHeightChangeOnResizeCallback: () -> Unit,
     ): TextView {
-        return createView(context, buttonComponent, templateConfig, actionListener)
+        return createView(context, buttonComponent, templateConfig, tagResolver, actionListener)
             .apply {
                 val verticalPadding = FOOTER_BUTTON_VERTICAL_PADDING_DP.dp(context).toInt()
                 setPadding(paddingLeft, verticalPadding, paddingRight, verticalPadding)
@@ -482,5 +496,9 @@ internal class ViewHelper(
         view.setSingleLine()
         view.maxLines = 1
         view.ellipsize = ellipsize
+    }
+
+    private fun fixItalicClipping(view: TextView) {
+        view.setShadowLayer(1f, 10f, 0f, Color.TRANSPARENT)
     }
 }

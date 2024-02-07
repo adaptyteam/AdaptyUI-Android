@@ -20,6 +20,7 @@ import com.adapty.ui.internal.log
 import com.adapty.ui.listeners.AdaptyUiDefaultEventListener
 import com.adapty.ui.listeners.AdaptyUiEventListener
 import com.adapty.ui.listeners.AdaptyUiPersonalizedOfferResolver
+import com.adapty.ui.listeners.AdaptyUiTagResolver
 import com.adapty.utils.AdaptyLogLevel.Companion.ERROR
 import com.adapty.utils.AdaptyLogLevel.Companion.VERBOSE
 
@@ -29,6 +30,7 @@ public class AdaptyPaywallView @JvmOverloads constructor(
 
     init {
         isClickable = true
+        clipChildren = false
     }
 
     private val flowKey = "#${hashCode()}#"
@@ -78,6 +80,8 @@ public class AdaptyPaywallView @JvmOverloads constructor(
      * @param[personalizedOfferResolver] In case you want to indicate whether the price is personalized ([read more](https://developer.android.com/google/play/billing/integrate#personalized-price)),
      * you can implement [AdaptyUiPersonalizedOfferResolver] and pass your own logic
      * that maps [AdaptyPaywallProduct] to `true`, if the price of the product is personalized, otherwise `false`.
+     *
+     * @param[tagResolver] If you are going to use custom tags functionality, pass the resolver function here.
      */
     @UiThread
     public fun showPaywall(
@@ -86,6 +90,7 @@ public class AdaptyPaywallView @JvmOverloads constructor(
         viewConfiguration: AdaptyViewConfiguration,
         insets: AdaptyPaywallInsets,
         personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver = AdaptyUiPersonalizedOfferResolver.DEFAULT,
+        tagResolver: AdaptyUiTagResolver = AdaptyUiTagResolver.DEFAULT,
     ) {
         log(VERBOSE) {
             "$LOG_PREFIX $flowKey showPaywall(template: ${viewConfiguration.templateId}, products: ${products?.size})"
@@ -99,6 +104,7 @@ public class AdaptyPaywallView @JvmOverloads constructor(
                 products,
                 insets,
                 personalizedOfferResolver,
+                tagResolver,
             )
         } catch (e: Exception) {
             onRenderingError(e)

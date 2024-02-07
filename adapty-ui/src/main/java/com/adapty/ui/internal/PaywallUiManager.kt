@@ -8,6 +8,7 @@ import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyViewConfiguration.Component
 import com.adapty.ui.AdaptyPaywallInsets
 import com.adapty.ui.AdaptyPaywallView
+import com.adapty.ui.listeners.AdaptyUiTagResolver
 import com.adapty.utils.AdaptyLogLevel.Companion.VERBOSE
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -30,13 +31,14 @@ internal class PaywallUiManager(
         paywall: AdaptyPaywall,
         products: List<AdaptyPaywallProduct>?,
         insets: AdaptyPaywallInsets,
+        tagResolver: AdaptyUiTagResolver,
         interactionListener: InteractionListener,
     ) {
         val renderer = PaywallRenderer.create(templateConfig, productBlockRenderer, viewHelper, layoutHelper)
         val actionListener: (Component.Button.Action) -> Unit = { action ->
             when (action) {
                 is Component.Button.Action.OpenUrl -> {
-                    templateConfig.getString(action.urlId)?.let { url ->
+                    templateConfig.getString(action.urlId, tagResolver)?.let { url ->
                         log(VERBOSE) { "$LOG_PREFIX $flowKey action: open url" }
                         interactionListener.onUrlClicked(url)
                     }
@@ -63,6 +65,7 @@ internal class PaywallUiManager(
             products,
             paywallView,
             insets,
+            tagResolver,
             actionListener,
             interactionListener,
         )
@@ -70,7 +73,9 @@ internal class PaywallUiManager(
 
     fun onProductsLoaded(
         products: List<AdaptyPaywallProduct>,
+        paywall: AdaptyPaywall,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
         interactionListener: InteractionListener,
     ) {
         val paywallScreen = paywallScreen ?: return
@@ -79,7 +84,7 @@ internal class PaywallUiManager(
         val purchaseButton = paywallScreen.purchaseButton
         val constraintSet = ConstraintSet().apply { clone(contentContainer) }
 
-        val productBlock = templateConfig.getProducts()
+        val productBlock = templateConfig.getProductBlock(paywall)
 
         productBlockRenderer.fillInnerProductTexts(
             products,
@@ -87,6 +92,7 @@ internal class PaywallUiManager(
             productBlock,
             purchaseButton.textView,
             templateConfig,
+            tagResolver,
             interactionListener,
         )
 

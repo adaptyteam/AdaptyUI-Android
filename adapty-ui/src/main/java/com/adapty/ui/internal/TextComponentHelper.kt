@@ -18,6 +18,7 @@ import android.text.style.RelativeSizeSpan
 import androidx.annotation.RestrictTo
 import com.adapty.models.AdaptyViewConfiguration
 import com.adapty.models.AdaptyViewConfiguration.Component.Text
+import com.adapty.ui.listeners.AdaptyUiTagResolver
 import com.adapty.utils.AdaptyLogLevel
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -29,6 +30,7 @@ internal class TextComponentHelper(
         context: Context,
         textComponent: Text,
         templateConfig: TemplateConfig,
+        tagResolver: AdaptyUiTagResolver,
         productPlaceholders: List<ProductPlaceholderContentData>? = null
     ): TextProperties {
         val propertiesBuilder = TextProperties.Builder()
@@ -40,9 +42,9 @@ internal class TextComponentHelper(
 
                 val font = templateConfig.getAsset<AdaptyViewConfiguration.Asset.Font>(textComponent.fontId)
 
-                propertiesBuilder.typeface = TypefaceHolder.getOrPut(context, font.value, font.style)
+                propertiesBuilder.typeface = TypefaceHolder.getOrPut(context, font)
 
-                val content = templateConfig.getString(textComponent.stringId)
+                val content = templateConfig.getString(textComponent.stringId, tagResolver)
                     ?.let { str ->
                         if (productPlaceholders != null) {
                             val paint = TextPaint().apply {
@@ -75,7 +77,7 @@ internal class TextComponentHelper(
                     when (item) {
                         is Text.Item.Text -> {
                             val currentStr =
-                                processTextItem(context, templateConfig, item, textComponent, propertiesBuilder, productPlaceholders) ?: return@forEach
+                                processTextItem(context, templateConfig, item, textComponent, propertiesBuilder, tagResolver, productPlaceholders) ?: return@forEach
                             content.append(currentStr)
                         }
 
@@ -86,7 +88,7 @@ internal class TextComponentHelper(
                             val spacePart = item.space
 
                             val currentStr =
-                                processTextItem(context, templateConfig, textPart, textComponent, propertiesBuilder, productPlaceholders) ?: return@forEach
+                                processTextItem(context, templateConfig, textPart, textComponent, propertiesBuilder, tagResolver, productPlaceholders) ?: return@forEach
 
                             val spacePx = spacePart?.value?.dp(context)?.toInt() ?: 0
                             val verticalSpacePx = templateConfig.featureSpacing.dp(context).toInt()
@@ -118,7 +120,7 @@ internal class TextComponentHelper(
                                 }
                                 is Text.Item.BulletedText.TextBullet -> {
                                     val bulletText =
-                                        processTextItem(context, templateConfig, bullet.text, textComponent, propertiesBuilder, productPlaceholders)
+                                        processTextItem(context, templateConfig, bullet.text, textComponent, propertiesBuilder, tagResolver, productPlaceholders)
                                             ?: SpannableString("")
 
                                     TextBulletSpan(bulletText, spacePx, verticalSpacePx)
@@ -245,14 +247,15 @@ internal class TextComponentHelper(
         item: Text.Item.Text,
         textComponent: Text,
         textPropertiesBuilder: TextProperties.Builder,
+        tagResolver: AdaptyUiTagResolver,
         productPlaceholders: List<ProductPlaceholderContentData>?,
     ): SpannableString? {
 
         val font = templateConfig.getAsset<AdaptyViewConfiguration.Asset.Font>(item.fontId)
 
-        val typeface = TypefaceHolder.getOrPut(context, font.value, font.style)
+        val typeface = TypefaceHolder.getOrPut(context, font)
 
-        val currentStr = templateConfig.getString(item.stringId)
+        val currentStr = templateConfig.getString(item.stringId, tagResolver)
             ?.let { str ->
                 if (productPlaceholders != null) {
                     val paint = TextPaint().apply {
