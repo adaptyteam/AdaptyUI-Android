@@ -62,7 +62,14 @@ class PaywallUiFragment : Fragment(R.layout.fragment_paywall_ui) {
          */
         paywallView.onReceiveSystemBarsInsets { insets ->
             val paywallInsets = AdaptyPaywallInsets.of(insets.top, insets.bottom)
-            paywallView.showPaywall(paywall, products, viewConfig, paywallInsets)
+            val customTags = mapOf("USERNAME" to "John")
+            paywallView.showPaywall(
+                paywall,
+                products,
+                viewConfig,
+                paywallInsets,
+                tagResolver = { tag -> customTags[tag] }
+            )
         }
 
         /**

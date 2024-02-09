@@ -113,17 +113,18 @@ internal sealed class TemplateConfig(protected val viewConfig: AdaptyViewConfigu
                     return@let str.value
 
                 var strValue = str.value
-                val foundTags = mutableSetOf<String>()
+                val foundTags = mutableSetOf<Pair<String, String>>()
                 customTagsMatcher.findAll(strValue).forEach { result ->
-                    val tag = result.value
-                    val tagIsUnknown = tagResolver.replacement(tag) == null && tag !in ProductPlaceholderContentData.Tags.all
+                    val fullTag = result.value
+                    val tagText = fullTag.replace("</", "").replace("/>", "")
+                    val tagIsUnknown = tagResolver.replacement(tagText) == null && fullTag !in ProductPlaceholderContentData.Tags.all
                     if (tagIsUnknown && str.fallback != null)
                         return@let str.fallback
-                    foundTags.add(tag)
+                    foundTags.add(tagText to fullTag)
                 }
-                for (tag in foundTags) {
-                    tagResolver.replacement(tag)?.let { replacement ->
-                        strValue = strValue.replace(tag, replacement)
+                for ((tagText, fullTag) in foundTags) {
+                    tagResolver.replacement(tagText)?.let { replacement ->
+                        strValue = strValue.replace(fullTag, replacement)
                     }
                 }
                 strValue
