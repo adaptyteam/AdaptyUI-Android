@@ -19,6 +19,7 @@ public fun interface AdaptyUiPersonalizedOfferResolver {
         /**
          * The default implementation that returns `false`.
          */
+        @JvmField
         public val DEFAULT: AdaptyUiPersonalizedOfferResolver =
             AdaptyUiPersonalizedOfferResolver { _ -> false }
     }

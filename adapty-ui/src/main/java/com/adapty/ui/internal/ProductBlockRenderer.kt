@@ -49,7 +49,8 @@ internal class ProductBlockRenderer(
         val productBlock = templateConfig.getProductBlock(paywall)
 
         val blockType = productBlock.blockType
-        val productInfos = productBlock.orderedProducts.withProductLayoutOrdering(templateConfig, blockType)
+        val productInfos = productBlock.paywallOrderedProducts
+            .withProductLayoutOrdering(templateConfig, blockType)
 
         checkProductNumber(productInfos, paywall)
 
@@ -159,7 +160,8 @@ internal class ProductBlockRenderer(
             }
 
         val products = products.withProductLayoutOrdering(templateConfig, productBlock.blockType)
-        val productInfos = productBlock.orderedProducts.withProductLayoutOrdering(templateConfig, productBlock.blockType)
+        val productInfos = productBlock.paywallOrderedProducts
+            .withProductLayoutOrdering(templateConfig, productBlock.blockType)
 
         productViewsBundles.forEachIndexed { i, productViewsBundle ->
             val product = products.getOrNull(i)

@@ -17,7 +17,7 @@ import java.text.NumberFormat
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class Products(
-    val orderedProducts: List<ProductInfo>,
+    val paywallOrderedProducts: List<ProductInfo>,
     val blockType: BlockType,
     val initiatePurchaseOnTap: Boolean,
 ) {

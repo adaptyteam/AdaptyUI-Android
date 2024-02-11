@@ -159,16 +159,15 @@ internal sealed class TemplateConfig(protected val viewConfig: AdaptyViewConfigu
             ProductBlock.Type.HORIZONTAL -> Products.BlockType.Horizontal
         }
 
-        val orderedProducts = getOrderedOriginalProductIds(paywall)
+        val paywallOrderedProducts = getOrderedOriginalProductIds(paywall)
             .mapIndexed { i, productId ->
                 productBlock.products[productId]?.let { productObject ->
                     ProductInfo.from(productObject.properties, i == productBlock.mainProductIndex)
                 }
             }
             .filterNotNull()
-            .withProductLayoutOrdering(this, blockType)
 
-        return Products(orderedProducts, blockType, productBlock.initiatePurchaseOnTap)
+        return Products(paywallOrderedProducts, blockType, productBlock.initiatePurchaseOnTap)
     }
 
     fun getFooterButtons(): List<Component.Button> {
