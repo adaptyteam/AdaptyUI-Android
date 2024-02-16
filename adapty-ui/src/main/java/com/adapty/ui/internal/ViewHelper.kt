@@ -22,9 +22,11 @@ import com.adapty.models.AdaptyViewConfiguration.Asset
 import com.adapty.models.AdaptyViewConfiguration.Component
 import com.adapty.ui.AdaptyPaywallInsets
 import com.adapty.ui.listeners.AdaptyUiTagResolver
+import com.adapty.utils.AdaptyLogLevel.Companion.WARN
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class ViewHelper(
+    private val flowKey: String,
     private val drawableHelper: DrawableHelper,
     private val textHelper: TextHelper,
     private val textComponentHelper: TextComponentHelper,
@@ -441,6 +443,36 @@ internal class ViewHelper(
         buttonComponent.action?.let { action ->
             view.setOnClickListener {
                 actionListener.invoke(action)
+            }
+        }
+
+        try {
+            view.visibility = if (buttonComponent.isVisible) View.VISIBLE else View.INVISIBLE
+
+            buttonComponent.transitionIn?.let { transitionIn ->
+                if (transitionIn.startDelayMillis > 0) {
+                    view.postDelayed({
+                        if (!view.isAttachedToWindow) return@postDelayed
+                        startTransition(view, transitionIn)
+                    }, transitionIn.startDelayMillis)
+                } else {
+                    startTransition(view, transitionIn)
+                }
+            }
+        } catch (e: LinkageError) {
+            log(WARN) { "$LOG_PREFIX $flowKey With this version of Adapty SDK, the 'Show button after delay' feature does not work. Please update to 2.10.1 or newer." }
+        }
+    }
+
+    private fun startTransition(view: View, transition: Component.Button.Transition) {
+        when (transition) {
+            is Component.Button.Transition.Fade -> {
+                view.visibility = View.VISIBLE
+                view.alpha = 0f
+                view.animate()
+                    .alpha(1f)
+                    .setInterpolator(transition.interpolator)
+                    .setDuration(transition.durationMillis)
             }
         }
     }

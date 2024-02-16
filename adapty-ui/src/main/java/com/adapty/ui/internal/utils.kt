@@ -1,5 +1,6 @@
 package com.adapty.ui.internal
 
+import android.animation.TimeInterpolator
 import android.content.Context
 import android.graphics.Point
 import android.os.Build
@@ -9,6 +10,10 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewTreeObserver.OnPreDrawListener
 import android.view.WindowManager
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import android.widget.TextView
 import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.models.AdaptyEligibility.ELIGIBLE
@@ -86,6 +91,15 @@ internal fun AdaptyViewConfiguration.HorizontalAlign.toLayoutAlignment() =
         AdaptyViewConfiguration.HorizontalAlign.LEFT -> Layout.Alignment.ALIGN_NORMAL
         AdaptyViewConfiguration.HorizontalAlign.CENTER -> Layout.Alignment.ALIGN_CENTER
         AdaptyViewConfiguration.HorizontalAlign.RIGHT -> Layout.Alignment.ALIGN_OPPOSITE
+    }
+
+internal val AdaptyViewConfiguration.Component.Button.Transition.interpolator: TimeInterpolator
+    get() = when (interpolatorName) {
+        "ease_in_out" -> AccelerateDecelerateInterpolator()
+        "ease_in" -> AccelerateInterpolator()
+        "ease_out" -> DecelerateInterpolator()
+        "linear" -> LinearInterpolator()
+        else -> AccelerateDecelerateInterpolator()
     }
 
 internal fun AdaptyPaywallProduct.hasFreeTrial(): Boolean =

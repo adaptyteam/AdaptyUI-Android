@@ -11,7 +11,7 @@ internal object PaywallPresenterFactory {
         val drawableHelper = DrawableHelper(shaderHelper)
         val textHelper = TextHelper(flowKey)
         val textComponentHelper = TextComponentHelper(flowKey)
-        val viewHelper = ViewHelper(drawableHelper, textHelper, textComponentHelper)
+        val viewHelper = ViewHelper(flowKey, drawableHelper, textHelper, textComponentHelper)
         val layoutHelper = LayoutHelper()
         val productBlockRenderer =
             ProductBlockRenderer(viewHelper, layoutHelper, textComponentHelper, uiContext.getCurrentLocale())
