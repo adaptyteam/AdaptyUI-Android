@@ -10,7 +10,7 @@ import com.adapty.models.AdaptyPeriodUnit.MONTH
 import com.adapty.models.AdaptyPeriodUnit.WEEK
 import com.adapty.models.AdaptyPeriodUnit.YEAR
 import com.adapty.models.AdaptyProductDiscountPhase.PaymentMode
-import com.adapty.models.AdaptyViewConfiguration.Component
+import com.adapty.ui.AdaptyUI.ViewConfiguration.Component
 import java.math.RoundingMode
 import java.text.Format
 import java.text.NumberFormat

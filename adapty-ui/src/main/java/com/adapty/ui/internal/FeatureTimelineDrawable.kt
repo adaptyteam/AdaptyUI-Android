@@ -7,7 +7,7 @@ import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import androidx.annotation.RestrictTo
-import com.adapty.models.AdaptyViewConfiguration
+import com.adapty.ui.AdaptyUI
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class FeatureTimelineDrawable(
@@ -15,12 +15,12 @@ internal class FeatureTimelineDrawable(
     private val icon: Drawable,
     private val backgroundDrawableSizePx: Float,
     private val lineWidthPx: Float,
-    private val lineColorOrGradient: AdaptyViewConfiguration.Asset,
+    private val lineColorOrGradient: AdaptyUI.ViewConfiguration.Asset,
     private val shaderHelper: ShaderHelper,
 ) : Drawable() {
 
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        if (lineColorOrGradient is AdaptyViewConfiguration.Asset.Color) {
+        if (lineColorOrGradient is AdaptyUI.ViewConfiguration.Asset.Color) {
             color = lineColorOrGradient.value
         }
     }
@@ -49,7 +49,7 @@ internal class FeatureTimelineDrawable(
     }
 
     override fun draw(canvas: Canvas) {
-        if (linePaint.shader == null && lineColorOrGradient is AdaptyViewConfiguration.Asset.Gradient) {
+        if (linePaint.shader == null && lineColorOrGradient is AdaptyUI.ViewConfiguration.Asset.Gradient) {
             val gradient = shaderHelper.createShader(bounds, lineColorOrGradient)
 
             linePaint.shader = gradient

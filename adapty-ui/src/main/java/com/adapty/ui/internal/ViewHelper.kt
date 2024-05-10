@@ -18,9 +18,10 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.annotation.RestrictTo
 import androidx.constraintlayout.widget.ConstraintLayout
-import com.adapty.models.AdaptyViewConfiguration.Asset
-import com.adapty.models.AdaptyViewConfiguration.Component
 import com.adapty.ui.AdaptyPaywallInsets
+import com.adapty.ui.AdaptyUI.ViewConfiguration.Asset
+import com.adapty.ui.AdaptyUI.ViewConfiguration.Component
+import com.adapty.ui.internal.cache.MediaFetchService
 import com.adapty.ui.listeners.AdaptyUiTagResolver
 import com.adapty.utils.AdaptyLogLevel.Companion.WARN
 
@@ -30,6 +31,8 @@ internal class ViewHelper(
     private val drawableHelper: DrawableHelper,
     private val textHelper: TextHelper,
     private val textComponentHelper: TextComponentHelper,
+    private val bitmapHelper: BitmapHelper,
+    private val mediaFetchService: MediaFetchService,
 ) {
 
     fun createView(context: Context, textComponent: Component.Text, templateConfig: TemplateConfig, tagResolver: AdaptyUiTagResolver): TextView {
@@ -159,7 +162,7 @@ internal class ViewHelper(
     ): View {
         return View(context).apply {
             id = View.generateViewId()
-            background = drawableHelper.createDrawable(shape, templateConfig, context)
+            setShapeBackgroundAsync(shape, templateConfig)
         }
     }
 
@@ -225,11 +228,32 @@ internal class ViewHelper(
 
             layoutParams = LayoutParams(width, height)
 
-            setImageDrawable(
-                drawableHelper.createDrawable(filling)
-            )
+            setImageDrawableAsync(filling)
 
             scaleType = ImageView.ScaleType.CENTER_CROP
+        }
+    }
+
+    private fun ImageView.setImageDrawableAsync(filling: Asset.Filling) {
+        when (filling) {
+            is Asset.RemoteImage -> {
+                mediaFetchService.loadImage(
+                    filling,
+                    handlePreview = { previewImage ->
+                        post {
+                            if (isAttachedToWindow)
+                                setImageDrawable(drawableHelper.createDrawable(previewImage))
+                        }
+                    },
+                    handleResult = { mainImage ->
+                        post {
+                            if (isAttachedToWindow)
+                                setImageDrawable(drawableHelper.createDrawable(mainImage))
+                        }
+                    }
+                )
+            }
+            is Asset.Filling.Local -> setImageDrawable(drawableHelper.createDrawable(filling))
         }
     }
 
@@ -240,7 +264,43 @@ internal class ViewHelper(
     ): View {
         return View(context).apply {
             id = View.generateViewId()
-            background = drawableHelper.createDrawable(shape, templateConfig, context)
+            setShapeBackgroundAsync(shape, templateConfig)
+        }
+    }
+
+    private fun View.setShapeBackgroundAsync(
+        shape: Component.Shape,
+        templateConfig: TemplateConfig,
+    ) {
+        val shapeType = drawableHelper.extractShapeType(shape, context)
+
+        val fillAsset = shape.backgroundAssetId?.let { assetId ->
+            templateConfig.getAsset<Asset.Filling>(assetId)
+        }
+
+        val stroke = shape.border?.let { border ->
+            border to templateConfig.getAsset<Asset.Filling.Local>(border.assetId)
+        }
+
+        when (fillAsset) {
+            is Asset.RemoteImage -> {
+                mediaFetchService.loadImage(
+                    fillAsset,
+                    handlePreview = { previewImage ->
+                        post {
+                            if (isAttachedToWindow)
+                                background = drawableHelper.createDrawable(shapeType, previewImage, stroke, context)
+                        }
+                    },
+                    handleResult = { mainImage ->
+                        post {
+                            if (isAttachedToWindow)
+                                background = drawableHelper.createDrawable(shapeType, mainImage, stroke, context)
+                        }
+                    }
+                )
+            }
+            else -> background = drawableHelper.createDrawable(shapeType, fillAsset as? Asset.Filling.Local, stroke, context)
         }
     }
 
@@ -270,7 +330,7 @@ internal class ViewHelper(
                     buttonComponent.shape?.backgroundAssetId?.let { assetId ->
                         view.background = BitmapDrawable(
                             context.resources,
-                            templateConfig.getAsset<Asset.Image>(assetId).bitmap,
+                            bitmapHelper.getBitmap(templateConfig.getAsset(assetId)),
                         )
                     }
                 }
@@ -339,7 +399,7 @@ internal class ViewHelper(
                 gravity = Gravity.CENTER
 
                 shapeComponent?.let { shape ->
-                    background = drawableHelper.createDrawable(shape, templateConfig, context)
+                    setShapeBackgroundAsync(shape, templateConfig)
                 }
 
                 val horizontalPadding = PRODUCT_TAG_HORIZONTAL_PADDING_DP.dp(context).toInt()

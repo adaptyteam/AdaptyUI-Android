@@ -9,9 +9,8 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.Group
 import androidx.fragment.app.Fragment
 import com.adapty.Adapty
-import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
-import com.adapty.models.AdaptyViewConfiguration
+import com.adapty.ui.AdaptyUI
 import com.adapty.utils.AdaptyResult
 
 /**
@@ -30,15 +29,13 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     }
 
     private fun presentPaywall(
-        paywall: AdaptyPaywall,
-        products: List<AdaptyPaywallProduct>,
-        viewConfiguration: AdaptyViewConfiguration
+        viewConfiguration: AdaptyUI.ViewConfiguration,
+        products: List<AdaptyPaywallProduct>
     ) {
         val paywallFragment =
             PaywallUiFragment.newInstance(
-                paywall,
-                products,
                 viewConfiguration,
+                products,
             )
 
         parentFragmentManager.beginTransaction()
@@ -96,13 +93,13 @@ class MainFragment : Fragment(R.layout.fragment_main) {
 
                                         errorView.text = ""
 
-                                        Adapty.getViewConfiguration(paywall, "en") { configResult ->
+                                        AdaptyUI.getViewConfiguration(paywall) { configResult ->
                                             progressDialog.cancel()
                                             when (configResult) {
                                                 is AdaptyResult.Success -> {
                                                     val viewConfig = configResult.value
 
-                                                    presentPaywall(paywall, products, viewConfig)
+                                                    presentPaywall(viewConfig, products)
                                                 }
                                                 is AdaptyResult.Error -> {
                                                     errorView.text =
@@ -115,7 +112,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                                     paywallRelatedViews.visibility = View.VISIBLE
                                     variationValue.text = paywall.variationId
                                     revisionValue.text = "${paywall.revision}"
-                                    localeValue.text = paywall.locale
+                                    localeValue.text = paywall.remoteConfig?.locale
 
                                     if (paywall.hasViewConfiguration) {
                                         visualValue.text = "yes"

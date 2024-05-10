@@ -9,19 +9,21 @@ import android.graphics.Rect
 import android.graphics.Shader
 import android.graphics.SweepGradient
 import androidx.annotation.RestrictTo
-import com.adapty.models.AdaptyViewConfiguration
+import com.adapty.ui.AdaptyUI
 import java.lang.Float.min
 import kotlin.math.roundToInt
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-internal class ShaderHelper {
+internal class ShaderHelper(
+    private val bitmapHelper: BitmapHelper,
+) {
 
-    fun createShader(bounds: Rect, gradient: AdaptyViewConfiguration.Asset.Gradient): Shader {
+    fun createShader(bounds: Rect, gradient: AdaptyUI.ViewConfiguration.Asset.Gradient): Shader {
         val colors = gradient.colors
         val positions = gradient.positions
 
         return when (gradient.type) {
-            AdaptyViewConfiguration.Asset.Gradient.Type.LINEAR -> {
+            AdaptyUI.ViewConfiguration.Asset.Gradient.Type.LINEAR -> {
                 val (x0, y0, x1, y1) = gradient.points
 
                 val w = bounds.width()
@@ -36,7 +38,7 @@ internal class ShaderHelper {
                 )
             }
 
-            AdaptyViewConfiguration.Asset.Gradient.Type.RADIAL -> {
+            AdaptyUI.ViewConfiguration.Asset.Gradient.Type.RADIAL -> {
                 RadialGradient(
                     bounds.exactCenterX(), bounds.exactCenterY(),
                     min(bounds.width().toFloat(), bounds.height().toFloat()),
@@ -44,12 +46,29 @@ internal class ShaderHelper {
                 )
             }
 
-            AdaptyViewConfiguration.Asset.Gradient.Type.CONIC -> {
+            AdaptyUI.ViewConfiguration.Asset.Gradient.Type.CONIC -> {
                 SweepGradient(
                     bounds.exactCenterX(), bounds.exactCenterY(),
                     colors, positions,
                 )
             }
+        }
+    }
+
+    fun createShader(bounds: Rect, image: AdaptyUI.ViewConfiguration.Asset.Image): Shader? {
+        val reqDimValue: Int
+        val dim: AdaptyUI.ViewConfiguration.Asset.Image.Dimension
+        val boundsWidth = bounds.width()
+        val boundsHeight = bounds.height()
+        if (boundsWidth > boundsHeight) {
+            reqDimValue = boundsWidth
+            dim = AdaptyUI.ViewConfiguration.Asset.Image.Dimension.WIDTH
+        } else {
+            reqDimValue = boundsHeight
+            dim = AdaptyUI.ViewConfiguration.Asset.Image.Dimension.HEIGHT
+        }
+        return bitmapHelper.getBitmap(image, reqDimValue, dim)?.let { bitmap ->
+            createShader(bounds, bitmap)
         }
     }
 

@@ -16,14 +16,15 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.ImageSpan
 import android.text.style.RelativeSizeSpan
 import androidx.annotation.RestrictTo
-import com.adapty.models.AdaptyViewConfiguration
-import com.adapty.models.AdaptyViewConfiguration.Component.Text
+import com.adapty.ui.AdaptyUI
+import com.adapty.ui.AdaptyUI.ViewConfiguration.Component.Text
 import com.adapty.ui.listeners.AdaptyUiTagResolver
 import com.adapty.utils.AdaptyLogLevel
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class TextComponentHelper(
     private val flowKey: String,
+    private val bitmapHelper: BitmapHelper,
 ) {
 
     fun processTextComponent(
@@ -40,7 +41,7 @@ internal class TextComponentHelper(
             is Text.Single -> {
                 propertiesBuilder.isMultiple = false
 
-                val font = templateConfig.getAsset<AdaptyViewConfiguration.Asset.Font>(textComponent.fontId)
+                val font = templateConfig.getAsset<AdaptyUI.ViewConfiguration.Asset.Font>(textComponent.fontId)
 
                 propertiesBuilder.typeface = TypefaceHolder.getOrPut(context, font)
 
@@ -60,7 +61,7 @@ internal class TextComponentHelper(
                 propertiesBuilder.textSize = textComponent.size ?: font.size
 
                 val textColorFromComponent = textComponent.textColorId?.let { assetId ->
-                    templateConfig.getAsset<AdaptyViewConfiguration.Asset.Color>(assetId)
+                    templateConfig.getAsset<AdaptyUI.ViewConfiguration.Asset.Color>(assetId)
                 }
 
                 propertiesBuilder.textColor = textColorFromComponent?.value ?: font.color
@@ -100,8 +101,12 @@ internal class TextComponentHelper(
                                     val widthPx = image.width.dp(context).toInt()
                                     val heightPx = image.height.dp(context).toInt()
 
-                                    val drawable = templateConfig.getAsset<AdaptyViewConfiguration.Asset.Image>(image.imageId)
-                                        .getBitmap(widthPx, heightPx, AdaptyViewConfiguration.Asset.Image.ScaleType.FIT_MAX)?.let { bitmap ->
+                                    val drawable = bitmapHelper.getBitmap(
+                                        templateConfig.getAsset(image.imageId),
+                                        widthPx,
+                                        heightPx,
+                                        AdaptyUI.ViewConfiguration.Asset.Image.ScaleType.FIT_MAX,
+                                    )?.let { bitmap ->
                                             BitmapDrawable(context.resources, bitmap)
                                         } ?: kotlin.run {
                                         log(AdaptyLogLevel.ERROR) {
@@ -111,7 +116,7 @@ internal class TextComponentHelper(
                                     }
 
                                     image.tintColorId?.let { tintId ->
-                                        val tintColor = templateConfig.getAsset<AdaptyViewConfiguration.Asset.Color>(tintId).value
+                                        val tintColor = templateConfig.getAsset<AdaptyUI.ViewConfiguration.Asset.Color>(tintId).value
                                         drawable.colorFilter = PorterDuffColorFilter(tintColor, PorterDuff.Mode.SRC_IN)
                                     }
                                     drawable.setBounds(0, 0, widthPx, heightPx)
@@ -157,29 +162,33 @@ internal class TextComponentHelper(
                         is Text.Item.Image -> {
                             val widthPx = item.width.dp(context).toInt()
                             val heightPx = item.height.dp(context).toInt()
-                            templateConfig.getAsset<AdaptyViewConfiguration.Asset.Image>(item.imageId)
-                                .getBitmap(widthPx, heightPx, AdaptyViewConfiguration.Asset.Image.ScaleType.FIT_MAX)?.let { bitmap ->
-                                    val drawable = BitmapDrawable(context.resources, bitmap)
-                                    item.tintColorId?.let { tintId ->
-                                        val tintColor =
-                                            templateConfig.getAsset<AdaptyViewConfiguration.Asset.Color>(tintId).value
-                                        drawable.colorFilter = PorterDuffColorFilter(tintColor, PorterDuff.Mode.SRC_IN)
-                                    }
-                                    drawable.setBounds(0, 0, widthPx, heightPx)
-
-                                    val currentReplacementStr = SpannableString(" ")
-
-                                    val imageSpan = ImageSpan(drawable, ImageSpan.ALIGN_BASELINE)
-
-                                    currentReplacementStr.setSpan(
-                                        imageSpan,
-                                        0,
-                                        currentReplacementStr.length,
-                                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                                    )
-
-                                    content.append(currentReplacementStr)
+                            bitmapHelper.getBitmap(
+                                templateConfig.getAsset(item.imageId),
+                                widthPx,
+                                heightPx,
+                                AdaptyUI.ViewConfiguration.Asset.Image.ScaleType.FIT_MAX
+                            )?.let { bitmap ->
+                                val drawable = BitmapDrawable(context.resources, bitmap)
+                                item.tintColorId?.let { tintId ->
+                                    val tintColor =
+                                        templateConfig.getAsset<AdaptyUI.ViewConfiguration.Asset.Color>(tintId).value
+                                    drawable.colorFilter = PorterDuffColorFilter(tintColor, PorterDuff.Mode.SRC_IN)
                                 }
+                                drawable.setBounds(0, 0, widthPx, heightPx)
+
+                                val currentReplacementStr = SpannableString(" ")
+
+                                val imageSpan = ImageSpan(drawable, ImageSpan.ALIGN_BASELINE)
+
+                                currentReplacementStr.setSpan(
+                                    imageSpan,
+                                    0,
+                                    currentReplacementStr.length,
+                                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                                )
+
+                                content.append(currentReplacementStr)
+                            }
                         }
                     }
                 }
@@ -251,7 +260,7 @@ internal class TextComponentHelper(
         productPlaceholders: List<ProductPlaceholderContentData>?,
     ): SpannableString? {
 
-        val font = templateConfig.getAsset<AdaptyViewConfiguration.Asset.Font>(item.fontId)
+        val font = templateConfig.getAsset<AdaptyUI.ViewConfiguration.Asset.Font>(item.fontId)
 
         val typeface = TypefaceHolder.getOrPut(context, font)
 
@@ -274,7 +283,7 @@ internal class TextComponentHelper(
         spans.add(CustomTypefaceSpan(typeface))
 
         val textColor = font.color ?: (item.textColorId?.let { textColorId ->
-            templateConfig.getAsset<AdaptyViewConfiguration.Asset.Color>(textColorId)
+            templateConfig.getAsset<AdaptyUI.ViewConfiguration.Asset.Color>(textColorId)
         }?.value)
 
         if (textColor != null)

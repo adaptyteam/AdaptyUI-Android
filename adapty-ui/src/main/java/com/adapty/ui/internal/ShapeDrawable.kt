@@ -9,7 +9,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import androidx.annotation.RestrictTo
-import com.adapty.models.AdaptyViewConfiguration
+import com.adapty.ui.AdaptyUI
 import java.lang.Float.min
 import kotlin.math.acos
 
@@ -23,14 +23,14 @@ internal class ShapeDrawable(
     private val fillPath = Path()
     private val strokePath = Path()
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        (fillShape?.asset as? AdaptyViewConfiguration.Asset.Color)?.value?.let(::setColor)
+        (fillShape?.asset as? AdaptyUI.ViewConfiguration.Asset.Color)?.value?.let(::setColor)
     }
     private val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG)
         .apply {
             if (strokeShape != null) {
                 style = Paint.Style.STROKE
                 strokeWidth = strokeShape.strokeThicknessPx
-                (strokeShape.asset as? AdaptyViewConfiguration.Asset.Color)?.value?.let(::setColor)
+                (strokeShape.asset as? AdaptyUI.ViewConfiguration.Asset.Color)?.value?.let(::setColor)
             }
         }
 
@@ -66,26 +66,13 @@ internal class ShapeDrawable(
         }
     }
 
-    private fun setupShader(paint: Paint, asset: AdaptyViewConfiguration.Asset) {
+    private fun setupShader(paint: Paint, asset: AdaptyUI.ViewConfiguration.Asset.Filling.Local) {
         when (asset) {
-            is AdaptyViewConfiguration.Asset.Gradient -> {
+            is AdaptyUI.ViewConfiguration.Asset.Gradient -> {
                 paint.shader = shaderHelper.createShader(bounds, asset)
             }
-            is AdaptyViewConfiguration.Asset.Image -> {
-                val reqDimValue: Int
-                val dim: AdaptyViewConfiguration.Asset.Image.Dimension
-                val boundsWidth = bounds.width()
-                val boundsHeight = bounds.height()
-                if (boundsWidth > boundsHeight) {
-                    reqDimValue = boundsWidth
-                    dim = AdaptyViewConfiguration.Asset.Image.Dimension.WIDTH
-                } else {
-                    reqDimValue = boundsHeight
-                    dim = AdaptyViewConfiguration.Asset.Image.Dimension.HEIGHT
-                }
-                asset.getBitmap(reqDimValue, dim)?.let { bitmap ->
-                    paint.shader = shaderHelper.createShader(bounds, bitmap)
-                }
+            is AdaptyUI.ViewConfiguration.Asset.Image -> {
+                shaderHelper.createShader(bounds, asset)?.let(paint::setShader)
             }
             else -> Unit
         }
@@ -157,16 +144,16 @@ internal class ShapeDrawable(
 
     sealed class Shape(
         val type: Type,
-        val asset: AdaptyViewConfiguration.Asset.Filling,
+        val asset: AdaptyUI.ViewConfiguration.Asset.Filling.Local,
     ) {
         class Fill(
             type: Type,
-            asset: AdaptyViewConfiguration.Asset.Filling,
+            asset: AdaptyUI.ViewConfiguration.Asset.Filling.Local,
         ) : Shape(type, asset)
 
         class Stroke(
             type: Type,
-            asset: AdaptyViewConfiguration.Asset.Filling,
+            asset: AdaptyUI.ViewConfiguration.Asset.Filling.Local,
             val strokeThicknessPx: Float
         ) : Shape(type, asset)
 

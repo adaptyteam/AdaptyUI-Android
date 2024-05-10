@@ -5,7 +5,7 @@ import android.graphics.Typeface
 import androidx.annotation.RestrictTo
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.TypefaceCompat
-import com.adapty.models.AdaptyViewConfiguration.Asset
+import com.adapty.ui.AdaptyUI.ViewConfiguration.Asset
 import java.util.Locale
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -27,7 +27,7 @@ internal object TypefaceHolder {
         }
     }
 
-    private fun getFontFromResOrNull(context: Context, resourceIds: Array<String>): Typeface? {
+    private fun getFontFromResOrNull(context: Context, resourceIds: Iterable<String>): Typeface? {
         for (fontRes in resourceIds) {
             val resId = context.resources.getIdentifier(fontRes, "font", context.packageName)
 

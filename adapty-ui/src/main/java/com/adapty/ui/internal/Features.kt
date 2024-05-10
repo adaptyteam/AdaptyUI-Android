@@ -7,42 +7,42 @@ import androidx.annotation.RestrictTo
 import com.adapty.errors.AdaptyErrorCode
 import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.internal.utils.adaptyError
-import com.adapty.models.AdaptyViewConfiguration
+import com.adapty.ui.AdaptyUI
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal sealed class Features {
-    class List(val textComponent: AdaptyViewConfiguration.Component.Text): Features()
+    class List(val textComponent: AdaptyUI.ViewConfiguration.Component.Text): Features()
     class TimeLine(val timelineEntries: kotlin.collections.List<TimelineEntry>): Features()
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class TimelineEntry(
-    val text: AdaptyViewConfiguration.Component.Text,
-    val image: AdaptyViewConfiguration.Component.Reference,
-    val shape: AdaptyViewConfiguration.Component.Shape,
-    val tintColor: AdaptyViewConfiguration.Component.Reference?,
-    val gradient: AdaptyViewConfiguration.Component.Reference,
+    val text: AdaptyUI.ViewConfiguration.Component.Text,
+    val image: AdaptyUI.ViewConfiguration.Component.Reference,
+    val shape: AdaptyUI.ViewConfiguration.Component.Shape,
+    val tintColor: AdaptyUI.ViewConfiguration.Component.Reference?,
+    val gradient: AdaptyUI.ViewConfiguration.Component.Reference,
 ) {
     companion object {
-        fun from(map: Map<String, AdaptyViewConfiguration.Component>) =
+        fun from(map: Map<String, AdaptyUI.ViewConfiguration.Component>) =
             TimelineEntry(
-                map["text"] as? AdaptyViewConfiguration.Component.Text ?: throw adaptyError(
+                map["text"] as? AdaptyUI.ViewConfiguration.Component.Text ?: throw adaptyError(
                     null,
                     "AdaptyUIError: text property not found for timeline entry",
                     AdaptyErrorCode.DECODING_FAILED,
                 ),
-                (map["image"] as? AdaptyViewConfiguration.Component.Reference) ?: throw adaptyError(
+                (map["image"] as? AdaptyUI.ViewConfiguration.Component.Reference) ?: throw adaptyError(
                     null,
                     "AdaptyUIError: image property not found for timeline entry",
                     AdaptyErrorCode.DECODING_FAILED,
                 ),
-                (map["shape"] as? AdaptyViewConfiguration.Component.Shape) ?: throw adaptyError(
+                (map["shape"] as? AdaptyUI.ViewConfiguration.Component.Shape) ?: throw adaptyError(
                     null,
                     "AdaptyUIError: shape property not found for timeline entry",
                     AdaptyErrorCode.DECODING_FAILED,
                 ),
-                map["image_color"] as? AdaptyViewConfiguration.Component.Reference,
-                (map["gradient"] as? AdaptyViewConfiguration.Component.Reference) ?: throw adaptyError(
+                map["image_color"] as? AdaptyUI.ViewConfiguration.Component.Reference,
+                (map["gradient"] as? AdaptyUI.ViewConfiguration.Component.Reference) ?: throw adaptyError(
                     null,
                     "AdaptyUIError: gradient property not found for timeline entry",
                     AdaptyErrorCode.DECODING_FAILED,

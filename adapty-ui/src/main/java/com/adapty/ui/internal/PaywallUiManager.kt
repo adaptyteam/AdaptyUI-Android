@@ -2,12 +2,11 @@ package com.adapty.ui.internal
 
 import androidx.annotation.RestrictTo
 import androidx.constraintlayout.widget.ConstraintSet
-import androidx.constraintlayout.widget.ConstraintSet.*
 import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
-import com.adapty.models.AdaptyViewConfiguration.Component
 import com.adapty.ui.AdaptyPaywallInsets
 import com.adapty.ui.AdaptyPaywallView
+import com.adapty.ui.AdaptyUI.ViewConfiguration.Component
 import com.adapty.ui.listeners.AdaptyUiTagResolver
 import com.adapty.utils.AdaptyLogLevel.Companion.VERBOSE
 

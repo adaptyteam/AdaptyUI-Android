@@ -20,7 +20,7 @@ import com.adapty.models.AdaptyEligibility.ELIGIBLE
 import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyProductDiscountPhase
 import com.adapty.models.AdaptyProductDiscountPhase.PaymentMode
-import com.adapty.models.AdaptyViewConfiguration
+import com.adapty.ui.AdaptyUI
 import com.adapty.utils.AdaptyLogLevel
 import java.util.concurrent.Executors
 
@@ -79,21 +79,21 @@ internal fun Context.getCurrentLocale() =
         resources.configuration.locale
     }
 
-internal fun AdaptyViewConfiguration.HorizontalAlign.toGravity() =
+internal fun AdaptyUI.ViewConfiguration.HorizontalAlign.toGravity() =
     when (this) {
-        AdaptyViewConfiguration.HorizontalAlign.LEFT -> Gravity.START
-        AdaptyViewConfiguration.HorizontalAlign.CENTER -> Gravity.CENTER_HORIZONTAL
-        AdaptyViewConfiguration.HorizontalAlign.RIGHT -> Gravity.END
+        AdaptyUI.ViewConfiguration.HorizontalAlign.LEFT -> Gravity.START
+        AdaptyUI.ViewConfiguration.HorizontalAlign.CENTER -> Gravity.CENTER_HORIZONTAL
+        AdaptyUI.ViewConfiguration.HorizontalAlign.RIGHT -> Gravity.END
     }
 
-internal fun AdaptyViewConfiguration.HorizontalAlign.toLayoutAlignment() =
+internal fun AdaptyUI.ViewConfiguration.HorizontalAlign.toLayoutAlignment() =
     when (this) {
-        AdaptyViewConfiguration.HorizontalAlign.LEFT -> Layout.Alignment.ALIGN_NORMAL
-        AdaptyViewConfiguration.HorizontalAlign.CENTER -> Layout.Alignment.ALIGN_CENTER
-        AdaptyViewConfiguration.HorizontalAlign.RIGHT -> Layout.Alignment.ALIGN_OPPOSITE
+        AdaptyUI.ViewConfiguration.HorizontalAlign.LEFT -> Layout.Alignment.ALIGN_NORMAL
+        AdaptyUI.ViewConfiguration.HorizontalAlign.CENTER -> Layout.Alignment.ALIGN_CENTER
+        AdaptyUI.ViewConfiguration.HorizontalAlign.RIGHT -> Layout.Alignment.ALIGN_OPPOSITE
     }
 
-internal val AdaptyViewConfiguration.Component.Button.Transition.interpolator: TimeInterpolator
+internal val AdaptyUI.ViewConfiguration.Component.Button.Transition.interpolator: TimeInterpolator
     get() = when (interpolatorName) {
         "ease_in_out" -> AccelerateDecelerateInterpolator()
         "ease_in" -> AccelerateInterpolator()

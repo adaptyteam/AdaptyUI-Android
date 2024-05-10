@@ -30,7 +30,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':adapty-ui')
-    implementation 'io.adapty:android-sdk:2.10.1'
+    implementation 'io.adapty:android-sdk:2.11.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${kotlin_version}"
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.appcompat:appcompat:1.4.2'

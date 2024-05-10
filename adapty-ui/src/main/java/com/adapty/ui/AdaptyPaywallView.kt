@@ -6,19 +6,19 @@ import android.content.Context
 import android.util.AttributeSet
 import android.widget.FrameLayout
 import androidx.annotation.UiThread
-import com.adapty.Adapty
 import com.adapty.errors.AdaptyErrorCode
 import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.internal.utils.adaptyError
-import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
-import com.adapty.models.AdaptyViewConfiguration
 import com.adapty.ui.internal.LOG_PREFIX
 import com.adapty.ui.internal.LOG_PREFIX_ERROR
+import com.adapty.ui.internal.PaywallPresenter
 import com.adapty.ui.internal.PaywallPresenterFactory
+import com.adapty.ui.internal.retryLazy
 import com.adapty.ui.internal.log
 import com.adapty.ui.listeners.AdaptyUiDefaultEventListener
 import com.adapty.ui.listeners.AdaptyUiEventListener
+import com.adapty.ui.listeners.AdaptyUiObserverModeHandler
 import com.adapty.ui.listeners.AdaptyUiPersonalizedOfferResolver
 import com.adapty.ui.listeners.AdaptyUiTagResolver
 import com.adapty.utils.AdaptyLogLevel.Companion.ERROR
@@ -35,7 +35,9 @@ public class AdaptyPaywallView @JvmOverloads constructor(
 
     private val flowKey = "#${hashCode()}#"
 
-    private val presenter = PaywallPresenterFactory.create(flowKey, context)
+    private val presenter : PaywallPresenter? by retryLazy {
+        PaywallPresenterFactory.create(flowKey, context)
+    }
 
     @get:JvmSynthetic @set:JvmSynthetic
     internal var eventListener: AdaptyUiEventListener? = null
@@ -54,20 +56,26 @@ public class AdaptyPaywallView @JvmOverloads constructor(
         eventListener = listener
     }
 
+    @get:JvmSynthetic @set:JvmSynthetic
+    internal var observerModeHandler: AdaptyUiObserverModeHandler? = null
+        get() = if (isAttachedToWindow) field else null
+
+    public fun setObserverModeHandler(handler: AdaptyUiObserverModeHandler) {
+        observerModeHandler = handler
+    }
+
     /**
      * Should be called only on UI thread
      *
      * If the [AdaptyPaywallView] has been created by calling [AdaptyUI.getPaywallView],
      * calling this method is unnecessary.
      *
-     * @param[paywall] An [AdaptyPaywall] object, for which you are trying to display data.
+     * @param[viewConfiguration] An [AdaptyUI.ViewConfiguration] object containing information
+     * about the visual part of the paywall. To load it, use the [AdaptyUI.getViewConfiguration] method.
      *
      * @param[products] Optional [AdaptyPaywallProduct] list. Pass this value in order to optimize
      * the display time of the products on the screen. If you pass `null`, `AdaptyUI` will
      * automatically fetch the required products.
-     *
-     * @param[viewConfiguration] An [AdaptyViewConfiguration] object containing information
-     * about the visual part of the paywall. To load it, use the [Adapty.getViewConfiguration] method.
      *
      * @param[insets] In case the status bar or navigation bar overlap the view, you can pass
      * an [AdaptyPaywallInsets] object.
@@ -85,9 +93,8 @@ public class AdaptyPaywallView @JvmOverloads constructor(
      */
     @UiThread
     public fun showPaywall(
-        paywall: AdaptyPaywall,
+        viewConfiguration: AdaptyUI.ViewConfiguration,
         products: List<AdaptyPaywallProduct>?,
-        viewConfiguration: AdaptyViewConfiguration,
         insets: AdaptyPaywallInsets,
         personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver = AdaptyUiPersonalizedOfferResolver.DEFAULT,
         tagResolver: AdaptyUiTagResolver = AdaptyUiTagResolver.DEFAULT,
@@ -97,10 +104,9 @@ public class AdaptyPaywallView @JvmOverloads constructor(
         }
         try {
             clearOldPaywall()
-            presenter.showPaywall(
+            presenter?.showPaywall(
                 this,
                 viewConfiguration,
-                paywall,
                 products,
                 insets,
                 personalizedOfferResolver,
@@ -113,7 +119,7 @@ public class AdaptyPaywallView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        presenter.onSizeChanged(w, h)
+        presenter?.onSizeChanged(w, h)
     }
 
     override fun onAttachedToWindow() {
@@ -128,7 +134,7 @@ public class AdaptyPaywallView @JvmOverloads constructor(
     }
 
     private fun clearOldPaywall() {
-        presenter.clearOldPaywall()
+        presenter?.clearOldPaywall()
         removeAllViews()
     }
 

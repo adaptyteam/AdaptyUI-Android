@@ -8,17 +8,18 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.RippleDrawable
 import android.graphics.drawable.StateListDrawable
 import androidx.annotation.RestrictTo
-import com.adapty.models.AdaptyViewConfiguration
-import com.adapty.models.AdaptyViewConfiguration.Component.Shape
-import com.adapty.models.AdaptyViewConfiguration.Component.Shape.CornerRadius
+import com.adapty.ui.AdaptyUI
+import com.adapty.ui.AdaptyUI.ViewConfiguration.Component.Shape
+import com.adapty.ui.AdaptyUI.ViewConfiguration.Component.Shape.CornerRadius
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class DrawableHelper(
     private val shaderHelper: ShaderHelper,
+    private val bitmapHelper: BitmapHelper,
 ) {
 
     fun createDrawable(
-        filling: AdaptyViewConfiguration.Asset.Filling,
+        filling: AdaptyUI.ViewConfiguration.Asset.Filling.Local,
     ): Drawable {
         return ShapeDrawable(
             ShapeDrawable.Shape.Fill(ShapeDrawable.Shape.Type.Rect(), filling),
@@ -45,11 +46,42 @@ internal class DrawableHelper(
     }
 
     fun createDrawable(
+        shapeType: ShapeDrawable.Shape.Type,
+        fillAsset: AdaptyUI.ViewConfiguration.Asset.Filling.Local?,
+        stroke: Pair<Shape.Border, AdaptyUI.ViewConfiguration.Asset.Filling.Local>?,
+        context: Context,
+    ): ShapeDrawable {
+        val fillShape = fillAsset?.let { ShapeDrawable.Shape.Fill(shapeType, fillAsset) }
+        val strokeShape = stroke?.let { (shapeBorder, strokeAsset) ->
+            ShapeDrawable.Shape.Stroke(shapeType, strokeAsset, shapeBorder.thickness.dp(context))
+        }
+
+        return ShapeDrawable(fillShape, strokeShape, shaderHelper)
+    }
+
+    private fun createDrawable(
         shape: Shape,
         templateConfig: TemplateConfig,
         context: Context,
     ): Drawable {
-        val shapeType = when (val type = shape.type) {
+        val shapeType = extractShapeType(shape, context)
+
+        val fillAsset = shape.backgroundAssetId?.let { assetId ->
+            templateConfig.getAsset<AdaptyUI.ViewConfiguration.Asset.Filling.Local>(assetId)
+        }
+
+        val stroke = shape.border?.let { border ->
+            border to templateConfig.getAsset<AdaptyUI.ViewConfiguration.Asset.Filling.Local>(border.assetId)
+        }
+
+        return createDrawable(shapeType, fillAsset, stroke, context)
+    }
+
+    fun extractShapeType(
+        shape: Shape,
+        context: Context,
+    ) : ShapeDrawable.Shape.Type {
+        return when (val type = shape.type) {
             is Shape.Type.Rectangle -> {
                 val cornerRadius = type.cornerRadius
                 val cornerRadiiPx = when {
@@ -84,20 +116,6 @@ internal class DrawableHelper(
 
             is Shape.Type.RectWithArc -> ShapeDrawable.Shape.Type.RectWithArc(type.arcHeight.dp(context))
         }
-
-        val fillShape = shape.backgroundAssetId?.let { assetId ->
-            val asset = templateConfig.getAsset<AdaptyViewConfiguration.Asset.Filling>(assetId)
-
-            ShapeDrawable.Shape.Fill(shapeType, asset)
-        }
-
-        val strokeShape = shape.border?.let { border ->
-            val asset = templateConfig.getAsset<AdaptyViewConfiguration.Asset.Filling>(border.assetId)
-
-            ShapeDrawable.Shape.Stroke(shapeType, asset, border.thickness.dp(context))
-        }
-
-        return ShapeDrawable(fillShape, strokeShape, shaderHelper)
     }
 
     fun createForegroundRippleDrawable(
@@ -124,20 +142,20 @@ internal class DrawableHelper(
         val bgSizePx = TIMELINE_DRAWABLE_BACKGROUND_WIDTH_DP.dp(context)
         val lineWidthPx = TIMELINE_DRAWABLE_LINE_WIDTH_DP.dp(context)
 
-        val bitmap = templateConfig.getAsset<AdaptyViewConfiguration.Asset.Image>(
+        val bitmap = templateConfig.getAsset<AdaptyUI.ViewConfiguration.Asset.Image>(
             timelineEntry.image.assetId,
-        ).getBitmap(bgSizePx.toInt(), AdaptyViewConfiguration.Asset.Image.Dimension.WIDTH)
+        ).let { image -> bitmapHelper.getBitmap(image, bgSizePx.toInt(), AdaptyUI.ViewConfiguration.Asset.Image.Dimension.WIDTH) }
 
         val circle = createDrawable(timelineEntry.shape, templateConfig, context)
 
         val icon = BitmapDrawable(context.resources, bitmap)
         timelineEntry.tintColor?.let { tint ->
             val tintColor =
-                templateConfig.getAsset<AdaptyViewConfiguration.Asset.Color>(tint.assetId).value
+                templateConfig.getAsset<AdaptyUI.ViewConfiguration.Asset.Color>(tint.assetId).value
             icon.colorFilter = PorterDuffColorFilter(tintColor, PorterDuff.Mode.SRC_IN)
         }
 
-        val lineGradient = templateConfig.getAsset<AdaptyViewConfiguration.Asset>(
+        val lineGradient = templateConfig.getAsset<AdaptyUI.ViewConfiguration.Asset>(
             timelineEntry.gradient.assetId,
         )
 

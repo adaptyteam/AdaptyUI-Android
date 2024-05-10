@@ -17,7 +17,7 @@ import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.internal.utils.adaptyError
 import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
-import com.adapty.models.AdaptyViewConfiguration
+import com.adapty.ui.AdaptyUI
 import com.adapty.ui.listeners.AdaptyUiTagResolver
 import java.text.NumberFormat
 import java.util.Currency
@@ -34,7 +34,7 @@ internal class ProductBlockRenderer(
     fun render(
         templateConfig: TemplateConfig,
         paywall: AdaptyPaywall,
-        actionListener: (AdaptyViewConfiguration.Component.Button.Action) -> Unit,
+        actionListener: (AdaptyUI.ViewConfiguration.Component.Button.Action) -> Unit,
         parentView: ConstraintLayout,
         purchaseButton: TextView?,
         products: List<AdaptyPaywallProduct>?,
@@ -253,7 +253,7 @@ internal class ProductBlockRenderer(
 
     private fun fillInnerText(
         textView: TextView,
-        textComponent: AdaptyViewConfiguration.Component.Text?,
+        textComponent: AdaptyUI.ViewConfiguration.Component.Text?,
         templateConfig: TemplateConfig,
         tagResolver: AdaptyUiTagResolver,
         productPlaceholders: List<ProductPlaceholderContentData>,

@@ -12,10 +12,10 @@ import androidx.constraintlayout.widget.ConstraintSet.TOP
 import androidx.constraintlayout.widget.ConstraintSet.WRAP_CONTENT
 import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
-import com.adapty.models.AdaptyViewConfiguration.Component
-import com.adapty.models.AdaptyViewConfiguration.Component.Shape
 import com.adapty.ui.AdaptyPaywallInsets
 import com.adapty.ui.AdaptyPaywallView
+import com.adapty.ui.AdaptyUI.ViewConfiguration.Component
+import com.adapty.ui.AdaptyUI.ViewConfiguration.Component.Shape
 import com.adapty.ui.listeners.AdaptyUiTagResolver
 import kotlin.math.abs
 

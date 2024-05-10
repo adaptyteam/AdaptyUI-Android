@@ -8,14 +8,14 @@ import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.internal.utils.adaptyError
 import com.adapty.internal.utils.getOrderedOriginalProductIds
 import com.adapty.models.AdaptyPaywall
-import com.adapty.models.AdaptyViewConfiguration
-import com.adapty.models.AdaptyViewConfiguration.Asset
-import com.adapty.models.AdaptyViewConfiguration.Component
-import com.adapty.models.AdaptyViewConfiguration.ProductBlock
+import com.adapty.ui.AdaptyUI
+import com.adapty.ui.AdaptyUI.ViewConfiguration.Asset
+import com.adapty.ui.AdaptyUI.ViewConfiguration.Component
+import com.adapty.ui.AdaptyUI.ViewConfiguration.ProductBlock
 import com.adapty.ui.listeners.AdaptyUiTagResolver
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-internal class BasicTemplateConfig(viewConfig: AdaptyViewConfiguration): TemplateConfig(viewConfig) {
+internal class BasicTemplateConfig(viewConfig: AdaptyUI.ViewConfiguration): TemplateConfig(viewConfig) {
 
     override val renderDirection: RenderDirection get() = RenderDirection.TOP_TO_BOTTOM
 
@@ -28,7 +28,7 @@ internal class BasicTemplateConfig(viewConfig: AdaptyViewConfiguration): Templat
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-internal class TransparentTemplateConfig(viewConfig: AdaptyViewConfiguration): TemplateConfig(viewConfig) {
+internal class TransparentTemplateConfig(viewConfig: AdaptyUI.ViewConfiguration): TemplateConfig(viewConfig) {
 
     override val renderDirection: RenderDirection get() = RenderDirection.BOTTOM_TO_TOP
 
@@ -39,7 +39,7 @@ internal class TransparentTemplateConfig(viewConfig: AdaptyViewConfiguration): T
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-internal class FlatTemplateConfig(viewConfig: AdaptyViewConfiguration): TemplateConfig(viewConfig) {
+internal class FlatTemplateConfig(viewConfig: AdaptyUI.ViewConfiguration): TemplateConfig(viewConfig) {
 
     override val renderDirection: RenderDirection get() = RenderDirection.TOP_TO_BOTTOM
 
@@ -54,7 +54,7 @@ internal class FlatTemplateConfig(viewConfig: AdaptyViewConfiguration): Template
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-internal sealed class TemplateConfig(protected val viewConfig: AdaptyViewConfiguration) {
+internal sealed class TemplateConfig(protected val viewConfig: AdaptyUI.ViewConfiguration) {
 
     abstract val renderDirection: RenderDirection
 
@@ -136,11 +136,11 @@ internal sealed class TemplateConfig(protected val viewConfig: AdaptyViewConfigu
         val style = getDefaultStyleOrError()
         return style.featureBlock?.let { featureBlock ->
             when (featureBlock.type) {
-                AdaptyViewConfiguration.FeatureBlock.Type.LIST -> {
+                AdaptyUI.ViewConfiguration.FeatureBlock.Type.LIST -> {
                     featureBlock.orderedItems.filterIsInstance<Component.Text>().getOrNull(0)
                         ?.let { Features.List(it)}
                 }
-                AdaptyViewConfiguration.FeatureBlock.Type.TIMELINE -> {
+                AdaptyUI.ViewConfiguration.FeatureBlock.Type.TIMELINE -> {
                     val timelineEntries = featureBlock.orderedItems.filterIsInstance<Component.CustomObject>().map { rawTimelineEntry ->
                         TimelineEntry.from(rawTimelineEntry.properties.toMap())
                     }
@@ -175,7 +175,7 @@ internal sealed class TemplateConfig(protected val viewConfig: AdaptyViewConfigu
         return style.footerBlock?.orderedItems?.filterIsInstance<Component.Button>().orEmpty()
     }
 
-    private fun getDefaultStyleOrError(): AdaptyViewConfiguration.Style {
+    private fun getDefaultStyleOrError(): AdaptyUI.ViewConfiguration.Style {
         return viewConfig.getStyle(STYLE_KEY_DEFAULT) ?: throw adaptyError(
             null,
             "AdaptyUIError: style not found ($STYLE_KEY_DEFAULT)",
@@ -184,7 +184,7 @@ internal sealed class TemplateConfig(protected val viewConfig: AdaptyViewConfigu
     }
 
     companion object {
-        fun from(viewConfig: AdaptyViewConfiguration): TemplateConfig {
+        fun from(viewConfig: AdaptyUI.ViewConfiguration): TemplateConfig {
             return when (viewConfig.templateId) {
                 CONFIG_KEY_TEMPLATE_BASIC -> BasicTemplateConfig(viewConfig)
                 CONFIG_KEY_TEMPLATE_TRANSPARENT -> TransparentTemplateConfig(viewConfig)
