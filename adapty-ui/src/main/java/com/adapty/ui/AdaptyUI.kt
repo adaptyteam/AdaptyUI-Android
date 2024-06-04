@@ -72,6 +72,9 @@ public object AdaptyUI {
      *
      * @param[tagResolver] If you are going to use custom tags functionality, pass the resolver function here.
      *
+     * @param[observerModeHandler] If you use Adapty in [Observer mode](https://docs.adapty.io/v2.0.0/docs/observer-vs-full-mode),
+     * pass the [AdaptyUiObserverModeHandler] implementation to handle purchases on your own.
+     *
      * @return An [AdaptyPaywallView] object, representing the requested paywall screen.
      */
     @JvmStatic
@@ -146,7 +149,7 @@ public object AdaptyUI {
     public class ViewConfiguration internal constructor(
         @get:JvmSynthetic internal val id: String,
         @get:JvmSynthetic internal val paywall: AdaptyPaywall,
-        @get:JvmSynthetic internal val isHard: Boolean,
+        public val isHard: Boolean,
         @get:JvmSynthetic internal val templateId: String?,
         @get:JvmSynthetic internal val mainImageRelativeHeight: Float,
         private val defaultLocalization: String?,
@@ -284,13 +287,12 @@ public object AdaptyUI {
                     LEADING, TRAILING, CENTER, FILL
                 }
 
-                internal sealed class Transition(
-                    val durationMillis: Long,
-                    val startDelayMillis: Long,
-                    val interpolatorName: String,
+                public sealed class Transition(
+                    internal val durationMillis: Long,
+                    internal val startDelayMillis: Long,
+                    internal val interpolatorName: String,
                 ) {
-
-                    class Fade(
+                    public class Fade(
                         durationMillis: Long,
                         startDelayMillis: Long,
                         interpolatorName: String,
@@ -366,9 +368,9 @@ public object AdaptyUI {
                 internal val source: Source,
             ): Filling.Local() {
 
-                internal sealed class Source {
-                    class File(val file: java.io.File): Source()
-                    class Base64Str(val imageBase64: String?): Source()
+                public sealed class Source {
+                    public class File(internal val file: java.io.File): Source()
+                    public class Base64Str(internal val imageBase64: String?): Source()
                 }
 
                 internal enum class Dimension { WIDTH, HEIGHT }

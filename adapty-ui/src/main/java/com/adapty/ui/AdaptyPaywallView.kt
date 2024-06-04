@@ -60,6 +60,12 @@ public class AdaptyPaywallView @JvmOverloads constructor(
     internal var observerModeHandler: AdaptyUiObserverModeHandler? = null
         get() = if (isAttachedToWindow) field else null
 
+    /**
+     * If you use Adapty in [Observer mode](https://docs.adapty.io/v2.0.0/docs/observer-vs-full-mode),
+     * use it to handle purchases on your own.
+     *
+     * @param[handler] An object that implements the [AdaptyUiObserverModeHandler] interface.
+     */
     public fun setObserverModeHandler(handler: AdaptyUiObserverModeHandler) {
         observerModeHandler = handler
     }
