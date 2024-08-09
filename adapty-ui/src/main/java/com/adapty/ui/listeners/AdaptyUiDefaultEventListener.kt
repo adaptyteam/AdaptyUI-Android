@@ -21,10 +21,10 @@ public open class AdaptyUiDefaultEventListener : AdaptyUiEventListener {
             AdaptyUI.Action.Close -> (view.context as? Activity)?.onBackPressed()
             is AdaptyUI.Action.OpenUrl -> {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(action.url))
-                if (view.context.packageManager.resolveActivity(intent, 0) == null) {
-                    log(ERROR) { "$LOG_PREFIX_ERROR couldn't find an app that can process this url" }
-                } else {
+                try {
                     view.context.startActivity(Intent.createChooser(intent, ""))
+                } catch (e: Throwable) {
+                    log(ERROR) { "$LOG_PREFIX_ERROR couldn't find an app that can process this url" }
                 }
             }
             is AdaptyUI.Action.Custom -> Unit
