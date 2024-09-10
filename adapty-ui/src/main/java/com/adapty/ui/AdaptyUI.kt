@@ -72,7 +72,7 @@ public object AdaptyUI {
      *
      * @param[tagResolver] If you are going to use custom tags functionality, pass the resolver function here.
      *
-     * @param[observerModeHandler] If you use Adapty in [Observer mode](https://docs.adapty.io/v2.0.0/docs/observer-vs-full-mode),
+     * @param[observerModeHandler] If you use Adapty in [Observer mode](https://adapty.io/docs/observer-vs-full-mode),
      * pass the [AdaptyUiObserverModeHandler] implementation to handle purchases on your own.
      *
      * @return An [AdaptyPaywallView] object, representing the requested paywall screen.
@@ -107,7 +107,7 @@ public object AdaptyUI {
     }
 
     /**
-     * If you are using the [Paywall Builder](https://docs.adapty.io/docs/paywall-builder-getting-started),
+     * If you are using the [Paywall Builder](https://adapty.io/docs/adapty-paywall-builder),
      * you can use this method to get a configuration object for your paywall.
      *
      * Should not be called before [Adapty.activate]
@@ -118,6 +118,8 @@ public object AdaptyUI {
      * If a timeout is not required, you can pass [TimeInterval.INFINITE].
      *
      * @param[callback] A result containing the [ViewConfiguration] object.
+     *
+     * @see <a href="https://adapty.io/docs/display-pb-paywalls">Display paywalls designed with Paywall Builder</a>
      */
     @JvmStatic
     @JvmOverloads

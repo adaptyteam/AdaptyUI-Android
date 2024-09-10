@@ -1,16 +1,12 @@
 package com.adapty.ui.internal
 
 import android.content.Context
-import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
-import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
-import android.os.Build
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
-import android.text.TextPaint
 import android.text.style.AlignmentSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.ImageSpan
@@ -48,10 +44,7 @@ internal class TextComponentHelper(
                 val content = templateConfig.getString(textComponent.stringId, tagResolver)
                     ?.let { str ->
                         if (productPlaceholders != null) {
-                            val paint = TextPaint().apply {
-                                propertiesBuilder.typeface?.let(::setTypeface)
-                            }
-                            replaceProductPlaceholders(str, productPlaceholders, paint)
+                            replaceProductPlaceholders(str, productPlaceholders)
                         } else {
                             str
                         }
@@ -199,55 +192,16 @@ internal class TextComponentHelper(
         }
     }
 
-    private fun replaceProductPlaceholders(str: String, productPlaceholders: List<ProductPlaceholderContentData>, paint: TextPaint): String {
+    private fun replaceProductPlaceholders(str: String, productPlaceholders: List<ProductPlaceholderContentData>): String {
         var str = str
         productPlaceholders.forEach { data ->
             str = when (data) {
                 is ProductPlaceholderContentData.Simple -> str.replace(data.placeholder, data.value)
-                is ProductPlaceholderContentData.Extended -> str.replace(
-                    data.placeholder,
-                    replaceCurrencyCodeWithSymbol(
-                        data.value,
-                        data.currencyCode,
-                        data.currencySymbol,
-                        paint,
-                    )
-                )
+                is ProductPlaceholderContentData.Extended -> str.replace(data.placeholder, data.value)
                 is ProductPlaceholderContentData.Drop -> if (str.contains(data.placeholder)) "" else str
             }
         }
         return str
-    }
-
-    private fun replaceCurrencyCodeWithSymbol(
-        text: String,
-        currencyCode: String,
-        currencySymbol: String,
-        paint: Paint,
-    ): String {
-        return when {
-            text.contains(currencyCode, true)
-                    && currencyCode.isNotBlank()
-                    && !currencyCode.equals(currencySymbol, true)
-                    && currencySymbol.all { paint.hasGlyphCompat(it.toString()) } -> {
-                text.replace(currencyCode, currencySymbol, true)
-            }
-            else -> text
-        }
-    }
-
-    private fun Paint.hasGlyphCompat(string: String): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return hasGlyph(string)
-        }
-        val missingSymbol = "\uD809\uDCAB".toCharArray()
-        val missingSymbolBounds = Rect()
-            .also { bounds -> getTextBounds(missingSymbol, 0, missingSymbol.size, bounds) }
-
-        val testSymbol = string.toCharArray()
-        val testSymbolBounds = Rect()
-            .also { bounds -> getTextBounds(testSymbol, 0, testSymbol.size, bounds) }
-        return testSymbolBounds != missingSymbolBounds
     }
 
     private fun processTextItem(
@@ -267,10 +221,7 @@ internal class TextComponentHelper(
         val currentStr = templateConfig.getString(item.stringId, tagResolver)
             ?.let { str ->
                 if (productPlaceholders != null) {
-                    val paint = TextPaint().apply {
-                        setTypeface(typeface)
-                    }
-                    SpannableString(replaceProductPlaceholders(str, productPlaceholders, paint))
+                    SpannableString(replaceProductPlaceholders(str, productPlaceholders))
                 } else {
                     SpannableString(str)
                 }

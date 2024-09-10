@@ -1,8 +1,12 @@
+@file:OptIn(InternalAdaptyApi::class)
+
 package com.adapty.ui.internal
 
 import android.view.View
 import android.widget.TextView
 import androidx.annotation.RestrictTo
+import com.adapty.internal.utils.InternalAdaptyApi
+import com.adapty.internal.utils.PriceFormatter
 import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.models.AdaptyPeriodUnit
 import com.adapty.models.AdaptyPeriodUnit.DAY
@@ -13,8 +17,6 @@ import com.adapty.models.AdaptyProductDiscountPhase.PaymentMode
 import com.adapty.ui.AdaptyUI.ViewConfiguration.Component
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.text.Format
-import java.text.NumberFormat
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class Products(
@@ -94,9 +96,9 @@ internal sealed class ProductPlaceholderContentData(
 ) {
     class Simple(placeholder: String, val value: String): ProductPlaceholderContentData(placeholder)
 
-    class Extended(placeholder: String, val value: String, product: AdaptyPaywallProduct, numberFormat: NumberFormat): ProductPlaceholderContentData(placeholder) {
+    class Extended(placeholder: String, val value: String, product: AdaptyPaywallProduct): ProductPlaceholderContentData(placeholder) {
         val currencyCode = product.price.currencyCode
-        val currencySymbol = numberFormat.currency?.symbol ?: currencyCode
+        val currencySymbol = product.price.currencySymbol
     }
 
     class Drop(placeholder: String): ProductPlaceholderContentData(placeholder)
@@ -127,30 +129,30 @@ internal sealed class ProductPlaceholderContentData(
 
     companion object {
 
-        fun create(product: AdaptyPaywallProduct, numberFormat: NumberFormat): List<ProductPlaceholderContentData> {
+        fun create(product: AdaptyPaywallProduct, priceFormatter: PriceFormatter): List<ProductPlaceholderContentData> {
             val firstDiscountOfferIfExists = product.firstDiscountOfferOrNull()
 
             return listOf(
                 from(Tags.title, product.localizedTitle),
-                from(Tags.price, product.price.localizedString, product, numberFormat),
-                from(Tags.pricePerDay, createPricePerPeriodText(product, DAY, numberFormat), product, numberFormat),
-                from(Tags.pricePerWeek, createPricePerPeriodText(product, WEEK, numberFormat), product, numberFormat),
-                from(Tags.pricePerMonth, createPricePerPeriodText(product, MONTH, numberFormat), product, numberFormat),
-                from(Tags.pricePerYear, createPricePerPeriodText(product, YEAR, numberFormat), product, numberFormat),
-                from(Tags.offerPrice, firstDiscountOfferIfExists?.price?.localizedString, product, numberFormat),
+                from(Tags.price, product.price.localizedString, product),
+                from(Tags.pricePerDay, createPricePerPeriodText(product, DAY, priceFormatter), product),
+                from(Tags.pricePerWeek, createPricePerPeriodText(product, WEEK, priceFormatter), product),
+                from(Tags.pricePerMonth, createPricePerPeriodText(product, MONTH, priceFormatter), product),
+                from(Tags.pricePerYear, createPricePerPeriodText(product, YEAR, priceFormatter), product),
+                from(Tags.offerPrice, firstDiscountOfferIfExists?.price?.localizedString, product),
                 from(Tags.offerPeriod, firstDiscountOfferIfExists?.localizedSubscriptionPeriod),
                 from(Tags.offerNumberOfPeriods, firstDiscountOfferIfExists?.localizedNumberOfPeriods),
             )
         }
 
-        private fun from(placeholder: String, value: String?, product: AdaptyPaywallProduct? = null, numberFormat: NumberFormat? = null): ProductPlaceholderContentData =
+        private fun from(placeholder: String, value: String?, product: AdaptyPaywallProduct? = null): ProductPlaceholderContentData =
             when {
                 value == null -> Drop(placeholder)
-                product == null || numberFormat == null -> Simple(placeholder, value)
-                else -> Extended(placeholder, value, product, numberFormat)
+                product == null -> Simple(placeholder, value)
+                else -> Extended(placeholder, value, product)
             }
 
-        private fun createPricePerPeriodText(product: AdaptyPaywallProduct, targetUnit: AdaptyPeriodUnit, numberFormat: Format): String? {
+        private fun createPricePerPeriodText(product: AdaptyPaywallProduct, targetUnit: AdaptyPeriodUnit, priceFormatter: PriceFormatter): String? {
             val subscriptionPeriod = product.subscriptionDetails?.subscriptionPeriod
             val price = product.price
             val unit =
@@ -173,26 +175,7 @@ internal sealed class ProductPlaceholderContentData(
                         else -> toYearly(price, unit, numberOfUnits)
                     }
 
-                    val pricePerPeriodString =
-                        pricePerPeriod
-                            .setScale(2, RoundingMode.CEILING)
-                            .let(numberFormat::format)
-                    var startIndex = -1
-                    var endIndex = -1
-                    for ((i, ch) in localizedPrice.withIndex()) {
-                        if (ch.isDigit()) {
-                            if (startIndex == -1) startIndex = i
-                            endIndex = i
-                        }
-                    }
-                    if (startIndex > -1 && endIndex in startIndex until localizedPrice.length) {
-                        localizedPrice.replace(
-                            localizedPrice.substring(startIndex..endIndex),
-                            pricePerPeriodString
-                        )
-                    } else {
-                        pricePerPeriodString
-                    }
+                    priceFormatter.format(pricePerPeriod, localizedPrice)
                 }
             }
         }

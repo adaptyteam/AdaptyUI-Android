@@ -14,21 +14,19 @@ import androidx.constraintlayout.widget.ConstraintSet.START
 import androidx.constraintlayout.widget.ConstraintSet.TOP
 import com.adapty.errors.AdaptyErrorCode
 import com.adapty.internal.utils.InternalAdaptyApi
+import com.adapty.internal.utils.PriceFormatter
 import com.adapty.internal.utils.adaptyError
 import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.ui.AdaptyUI
 import com.adapty.ui.listeners.AdaptyUiTagResolver
-import java.text.NumberFormat
-import java.util.Currency
-import java.util.Locale
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class ProductBlockRenderer(
     private val viewHelper: ViewHelper,
     private val layoutHelper: LayoutHelper,
     private val textComponentHelper: TextComponentHelper,
-    private val locale: Locale,
+    private val priceFormatter: PriceFormatter,
 ) {
 
     fun render(
@@ -150,15 +148,6 @@ internal class ProductBlockRenderer(
         tagResolver: AdaptyUiTagResolver,
         interactionListener: PaywallUiManager.InteractionListener,
     ) {
-        val numberFormat = NumberFormat.getInstance(locale)
-            .apply {
-                products.firstOrNull()?.let { product ->
-                    currency = Currency.getInstance(product.price.currencyCode)
-                }
-                minimumFractionDigits = 2
-                isGroupingUsed = true
-            }
-
         val products = products.withProductLayoutOrdering(templateConfig, productBlock.blockType)
         val productInfos = productBlock.paywallOrderedProducts
             .withProductLayoutOrdering(templateConfig, productBlock.blockType)
@@ -205,7 +194,7 @@ internal class ProductBlockRenderer(
                     }
                 }
 
-                val productPlaceholders = ProductPlaceholderContentData.create(product, numberFormat)
+                val productPlaceholders = ProductPlaceholderContentData.create(product, priceFormatter)
 
                 if (productViewsBundle.productTitle != null)
                     fillInnerText(

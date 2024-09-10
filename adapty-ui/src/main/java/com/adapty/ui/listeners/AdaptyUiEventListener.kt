@@ -46,7 +46,7 @@ public interface AdaptyUiEventListener {
      * @param[view] An [AdaptyPaywallView] within which the event occurred.
      *
      * @return An [AdaptySubscriptionUpdateParameters] object, used when
-     * you need a subscription to be replaced with another one, otherwise `null`, [read more](https://docs.adapty.io/docs/android-making-purchases#change-subscription).
+     * you need a subscription to be replaced with another one, otherwise `null`, [read more](https://adapty.io/docs/making-purchases#change-subscription-when-making-a-purchase).
      */
     public fun onAwaitingSubscriptionUpdateParams(
         product: AdaptyPaywallProduct,

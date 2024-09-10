@@ -5,14 +5,14 @@ import com.adapty.models.AdaptyPaywallProduct
 import com.adapty.ui.AdaptyPaywallView
 
 /**
- * If you use Adapty in [Observer mode](https://docs.adapty.io/v2.0.0/docs/observer-vs-full-mode),
+ * If you use Adapty in [Observer mode](https://adapty.io/docs/observer-vs-full-mode),
  * implement this interface to handle purchases on your own.
  */
 public fun interface AdaptyUiObserverModeHandler {
 
     /**
      * This callback is invoked when the user initiates a purchase.
-     * You can trigger your custom purchase flow in response to this callback, [read more](https://docs.adapty.io/docs/android-present-paywall-builder-paywalls-in-observer-mode).
+     * You can trigger your custom purchase flow in response to this callback, [read more](https://adapty.io/docs/android-present-paywall-builder-paywalls-in-observer-mode).
      *
      * @param[product] An [AdaptyPaywallProduct] of the purchase.
      *
