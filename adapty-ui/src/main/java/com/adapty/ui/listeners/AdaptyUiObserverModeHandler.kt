@@ -1,8 +1,8 @@
 package com.adapty.ui.listeners
 
+import android.content.Context
 import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
-import com.adapty.ui.AdaptyPaywallView
 
 /**
  * If you use Adapty in [Observer mode](https://adapty.io/docs/observer-vs-full-mode),
@@ -18,7 +18,7 @@ public fun interface AdaptyUiObserverModeHandler {
      *
      * @param[paywall] An [AdaptyPaywall] within which the purchase is initiated.
      *
-     * @param[view] An [AdaptyPaywallView] within which the purchase is initiated.
+     * @param[context] A UI [Context] within which the the purchase is initiated.
      *
      * @param[onStartPurchase] A [PurchaseStartCallback] that should be invoked to notify AdaptyUI
      * that the purchase is started.
@@ -53,7 +53,7 @@ public fun interface AdaptyUiObserverModeHandler {
     public fun onPurchaseInitiated(
         product: AdaptyPaywallProduct,
         paywall: AdaptyPaywall,
-        view: AdaptyPaywallView,
+        context: Context,
         onStartPurchase: PurchaseStartCallback,
         onFinishPurchase: PurchaseFinishCallback,
     )

@@ -1,10 +1,10 @@
 package com.adapty.ui.internal.cache
 
 import androidx.annotation.RestrictTo
-import com.adapty.utils.hours
-import com.adapty.ui.internal.LOG_PREFIX
-import com.adapty.ui.internal.log
+import com.adapty.ui.internal.utils.LOG_PREFIX
+import com.adapty.ui.internal.utils.log
 import com.adapty.utils.AdaptyLogLevel.Companion.ERROR
+import com.adapty.utils.hours
 import java.util.concurrent.Executors
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

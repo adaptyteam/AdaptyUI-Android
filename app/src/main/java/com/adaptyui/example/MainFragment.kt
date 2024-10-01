@@ -29,7 +29,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     }
 
     private fun presentPaywall(
-        viewConfiguration: AdaptyUI.ViewConfiguration,
+        viewConfiguration: AdaptyUI.LocalizedViewConfiguration,
         products: List<AdaptyPaywallProduct>
     ) {
         val paywallFragment =

@@ -1,10 +1,13 @@
+@file:OptIn(InternalAdaptyApi::class)
+
 package com.adapty.ui.internal.cache
 
 import androidx.annotation.RestrictTo
+import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.ui.AdaptyUI
-import com.adapty.ui.AdaptyUI.ViewConfiguration.Asset.Image
-import com.adapty.ui.internal.LOG_PREFIX
-import com.adapty.ui.internal.log
+import com.adapty.ui.AdaptyUI.LocalizedViewConfiguration.Asset.Image
+import com.adapty.ui.internal.utils.LOG_PREFIX
+import com.adapty.ui.internal.utils.log
 import com.adapty.utils.AdaptyLogLevel.Companion.VERBOSE
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -25,7 +28,7 @@ internal class MediaFetchService(
     }
 
     fun loadImage(
-        remoteImage: AdaptyUI.ViewConfiguration.Asset.RemoteImage,
+        remoteImage: AdaptyUI.LocalizedViewConfiguration.Asset.RemoteImage,
         handlePreview: ((preview: Image) -> Unit)?,
         handleResult: ((image: Image) -> Unit)?,
     ) {

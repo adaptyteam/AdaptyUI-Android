@@ -16,10 +16,6 @@ import com.adapty.internal.utils.HashingHelper
 import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
-import com.adapty.utils.TimeInterval
-import com.adapty.utils.days
-import com.adapty.ui.internal.LOG_PREFIX
-import com.adapty.ui.internal.ViewConfigurationMapper
 import com.adapty.ui.internal.cache.CacheCleanupService
 import com.adapty.ui.internal.cache.CacheFileManager
 import com.adapty.ui.internal.cache.MediaCacheConfigManager
@@ -27,40 +23,64 @@ import com.adapty.ui.internal.cache.MediaDownloader
 import com.adapty.ui.internal.cache.MediaFetchService
 import com.adapty.ui.internal.cache.MediaSaver
 import com.adapty.ui.internal.cache.SingleMediaHandlerFactory
-import com.adapty.ui.internal.log
+import com.adapty.ui.internal.mapping.attributes.CommonAttributeMapper
+import com.adapty.ui.internal.mapping.attributes.InteractiveAttributeMapper
+import com.adapty.ui.internal.mapping.attributes.PagerAttributeMapper
+import com.adapty.ui.internal.mapping.attributes.TextAttributeMapper
+import com.adapty.ui.internal.mapping.element.BoxElementMapper
+import com.adapty.ui.internal.mapping.element.ButtonElementMapper
+import com.adapty.ui.internal.mapping.element.ColumnElementMapper
+import com.adapty.ui.internal.mapping.element.HStackElementMapper
+import com.adapty.ui.internal.mapping.element.IfElementMapper
+import com.adapty.ui.internal.mapping.element.ImageElementMapper
+import com.adapty.ui.internal.mapping.element.PagerElementMapper
+import com.adapty.ui.internal.mapping.element.ReferenceBundles
+import com.adapty.ui.internal.mapping.element.ReferenceElementMapper
+import com.adapty.ui.internal.mapping.element.RowElementMapper
+import com.adapty.ui.internal.mapping.element.SectionElementMapper
+import com.adapty.ui.internal.mapping.element.SpaceElementMapper
+import com.adapty.ui.internal.mapping.element.TextElementMapper
+import com.adapty.ui.internal.mapping.element.TimerElementMapper
+import com.adapty.ui.internal.mapping.element.ToggleElementMapper
+import com.adapty.ui.internal.mapping.element.UIElementFactory
+import com.adapty.ui.internal.mapping.element.VStackElementMapper
+import com.adapty.ui.internal.mapping.element.ZStackElementMapper
+import com.adapty.ui.internal.mapping.viewconfig.ViewConfigurationAssetMapper
+import com.adapty.ui.internal.mapping.viewconfig.ViewConfigurationMapper
+import com.adapty.ui.internal.mapping.viewconfig.ViewConfigurationScreenMapper
+import com.adapty.ui.internal.mapping.viewconfig.ViewConfigurationTextMapper
+import com.adapty.ui.internal.ui.element.BoxElement
+import com.adapty.ui.internal.ui.element.UIElement
+import com.adapty.ui.internal.utils.LOG_PREFIX
+import com.adapty.ui.internal.utils.log
 import com.adapty.ui.listeners.AdaptyUiDefaultEventListener
 import com.adapty.ui.listeners.AdaptyUiEventListener
 import com.adapty.ui.listeners.AdaptyUiObserverModeHandler
 import com.adapty.ui.listeners.AdaptyUiPersonalizedOfferResolver
 import com.adapty.ui.listeners.AdaptyUiTagResolver
+import com.adapty.ui.listeners.AdaptyUiTimerResolver
 import com.adapty.utils.AdaptyLogLevel.Companion.ERROR
 import com.adapty.utils.AdaptyLogLevel.Companion.VERBOSE
 import com.adapty.utils.ResultCallback
+import com.adapty.utils.TimeInterval
+import com.adapty.utils.days
 
 public object AdaptyUI {
 
     /**
-     * Right after receiving [ViewConfiguration], you can create the corresponding
+     * Right after receiving [LocalizedViewConfiguration], you can create the corresponding
      * [AdaptyPaywallView] to display it afterwards.
      *
      * This method should be called only on UI thread.
      *
      * @param[activity] An [Activity] instance.
      *
-     * @param[viewConfiguration] An [ViewConfiguration] object containing information
+     * @param[viewConfiguration] A [LocalizedViewConfiguration] object containing information
      * about the visual part of the paywall. To load it, use the [AdaptyUI.getViewConfiguration] method.
      *
      * @param[products] Optional [AdaptyPaywallProduct] list. Pass this value in order to optimize
      * the display time of the products on the screen. If you pass `null`, `AdaptyUI` will
      * automatically fetch the required products.
-     *
-     * @param[insets] In case the status bar or navigation bar overlap the view, you can pass
-     * an [AdaptyPaywallInsets] object.
-     * If the status bar doesn't overlap the [AdaptyPaywallView], the [top][AdaptyPaywallInsets.top]
-     * value should be 0.
-     * If the navigation bar doesn't overlap the [AdaptyPaywallView], the [bottom][AdaptyPaywallInsets.bottom]
-     * value should be 0.
-     * If none of them do, you can pass [AdaptyPaywallInsets.NONE].
      *
      * @param[eventListener] An object that implements the [AdaptyUiEventListener] interface.
      * Use it to respond to different events happening inside the purchase screen.
@@ -72,6 +92,8 @@ public object AdaptyUI {
      *
      * @param[tagResolver] If you are going to use custom tags functionality, pass the resolver function here.
      *
+     * @param[timerResolver] If you are going to use custom timer functionality, pass the resolver function here.
+     *
      * @param[observerModeHandler] If you use Adapty in [Observer mode](https://adapty.io/docs/observer-vs-full-mode),
      * pass the [AdaptyUiObserverModeHandler] implementation to handle purchases on your own.
      *
@@ -82,26 +104,25 @@ public object AdaptyUI {
     @UiThread
     public fun getPaywallView(
         activity: Activity,
-        viewConfiguration: ViewConfiguration,
+        viewConfiguration: LocalizedViewConfiguration,
         products: List<AdaptyPaywallProduct>?,
-        insets: AdaptyPaywallInsets,
         eventListener: AdaptyUiEventListener,
         personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver = AdaptyUiPersonalizedOfferResolver.DEFAULT,
         tagResolver: AdaptyUiTagResolver = AdaptyUiTagResolver.DEFAULT,
+        timerResolver: AdaptyUiTimerResolver,
         observerModeHandler: AdaptyUiObserverModeHandler? = null,
     ): AdaptyPaywallView {
         return AdaptyPaywallView(activity).apply {
             id = View.generateViewId()
             layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-
-            setEventListener(eventListener)
-            observerModeHandler?.let(::setObserverModeHandler)
             showPaywall(
                 viewConfiguration,
                 products,
-                insets,
+                eventListener,
                 personalizedOfferResolver,
                 tagResolver,
+                timerResolver,
+                observerModeHandler,
             )
         }
     }
@@ -117,7 +138,7 @@ public object AdaptyUI {
      * @param[loadTimeout] This value limits the timeout for this method. The minimum value is 1 second.
      * If a timeout is not required, you can pass [TimeInterval.INFINITE].
      *
-     * @param[callback] A result containing the [ViewConfiguration] object.
+     * @param[callback] A result containing the [LocalizedViewConfiguration] object.
      *
      * @see <a href="https://adapty.io/docs/display-pb-paywalls">Display paywalls designed with Paywall Builder</a>
      */
@@ -126,7 +147,7 @@ public object AdaptyUI {
     public fun getViewConfiguration(
         paywall: AdaptyPaywall,
         loadTimeout: TimeInterval = DEFAULT_PAYWALL_TIMEOUT,
-        callback: ResultCallback<ViewConfiguration>
+        callback: ResultCallback<LocalizedViewConfiguration>
     ) {
         Adapty.getViewConfiguration(paywall, loadTimeout) { result ->
             callback.onResult(result.map { rawConfig ->
@@ -148,180 +169,19 @@ public object AdaptyUI {
         public class Custom(public val customId: String): Action()
     }
 
-    public class ViewConfiguration internal constructor(
+    public class LocalizedViewConfiguration internal constructor(
         @get:JvmSynthetic internal val id: String,
         @get:JvmSynthetic internal val paywall: AdaptyPaywall,
         public val isHard: Boolean,
-        @get:JvmSynthetic internal val templateId: String?,
-        @get:JvmSynthetic internal val mainImageRelativeHeight: Float,
-        private val defaultLocalization: String?,
-        private val assets: Map<String, Asset>,
-        private val localizations: Map<String, Localization>,
-        private val styles: Map<String, Style?>,
+        @get:JvmSynthetic internal val isRtl: Boolean,
+        @get:JvmSynthetic internal val assets: Map<String, Asset>,
+        @get:JvmSynthetic internal val texts: Map<String, TextItem>,
+        @get:JvmSynthetic internal val screens: ScreenBundle,
     ) {
-
-        internal class Style(
-            val featureBlock: FeatureBlock?,
-            val productBlock: ProductBlock,
-            val footerBlock: FooterBlock?,
-            val items: Map<String, Component>,
-        )
-
-        internal class FeatureBlock(
-            val type: Type,
-            val orderedItems: List<Component>,
-        ) {
-            enum class Type { LIST, TIMELINE }
-        }
-        internal class ProductBlock(
-            val type: Type,
-            val mainProductIndex: Int,
-            val initiatePurchaseOnTap: Boolean,
-            val products: Map<String, Component.ProductObject>,
-        ) {
-            enum class Type { SINGLE, VERTICAL, HORIZONTAL }
-        }
-        internal class FooterBlock(
-            val orderedItems: List<Component>,
-        )
-
         /**
          * @suppress
          */
-        public sealed class Component {
-
-            public sealed class Text(
-                internal val horizontalAlign: HorizontalAlign,
-            ) : Component() {
-
-                public class Single internal constructor(
-                    internal val stringId: String,
-                    internal val fontId: String,
-                    internal val size: Float?,
-                    internal val textColorId: String?,
-                    horizontalAlign: HorizontalAlign,
-                ): Text(horizontalAlign)
-
-                public class Multiple internal constructor(
-                    internal val items: List<Item>,
-                    horizontalAlign: HorizontalAlign,
-                ): Text(horizontalAlign)
-                public sealed class Item {
-                    public class Text internal constructor(
-                        internal val stringId: String,
-                        internal val fontId: String,
-                        internal val size: Float?,
-                        internal val textColorId: String?,
-                        internal val horizontalAlign: HorizontalAlign,
-                    ) : Item()
-
-                    public class Image internal constructor(
-                        internal val imageId: String,
-                        internal val tintColorId: String?,
-                        internal val width: Float,
-                        internal val height: Float,
-                    ): Item()
-                    public object NewLine: Item()
-                    public class Space internal constructor(internal val value: Float): Item()
-                    public class BulletedText internal constructor(
-                        internal val bullet: Bullet,
-                        internal val space: Space?,
-                        internal val text: Text,
-                    ) : Item() {
-                        public sealed class Bullet
-
-                        public class ImageBullet internal constructor(internal val image: Image): Bullet()
-                        public class TextBullet internal constructor(internal val text: Text): Bullet()
-                    }
-                }
-            }
-
-            public class Shape internal constructor(
-                internal val backgroundAssetId: String?,
-                internal val type: Type,
-                internal val border: Border?,
-            ): Component() {
-                public sealed class Type {
-                    public class Rectangle internal constructor(internal val cornerRadius: CornerRadius): Type()
-                    public object Circle: Type()
-                    public class RectWithArc internal constructor(internal val arcHeight: Float): Type() {
-                        internal companion object {
-                            const val ABS_ARC_HEIGHT = 20f
-                        }
-                    }
-                }
-
-                public sealed class CornerRadius {
-                    public object None: CornerRadius()
-                    public class Same internal constructor(internal val value: Float): CornerRadius()
-                    public class Different internal constructor(
-                        internal val topLeft: Float,
-                        internal val topRight: Float,
-                        internal val bottomRight: Float,
-                        internal val bottomLeft: Float,
-                    ) : CornerRadius()
-                }
-
-                internal class Border(
-                    val assetId: String,
-                    val thickness: Float,
-                )
-            }
-
-            public class Button internal constructor(
-                internal val shape: Shape?,
-                internal val selectedShape: Shape?,
-                internal val title: Text?,
-                internal val selectedTitle: Text?,
-                internal val align: Align,
-                internal val action: Action?,
-                internal val isVisible: Boolean,
-                internal val transitionIn: Transition?,
-            ): Component() {
-                public sealed class Action {
-                    public object Close: Action()
-                    public object Restore: Action()
-                    public class OpenUrl internal constructor(internal val urlId: String): Action()
-                    public class Custom internal constructor(internal val customId: String): Action()
-                }
-
-                internal enum class Align {
-                    LEADING, TRAILING, CENTER, FILL
-                }
-
-                public sealed class Transition(
-                    internal val durationMillis: Long,
-                    internal val startDelayMillis: Long,
-                    internal val interpolatorName: String,
-                ) {
-                    public class Fade(
-                        durationMillis: Long,
-                        startDelayMillis: Long,
-                        interpolatorName: String,
-                    ): Transition(durationMillis, startDelayMillis, interpolatorName)
-                }
-            }
-
-            public class Reference internal constructor(
-                internal val assetId: String,
-            ): Component()
-
-            public class ProductObject internal constructor(
-                internal val productId: String,
-                internal val properties: Map<String, Component>,
-            ): Component()
-
-            public class CustomObject internal constructor(
-                internal val type: String,
-                internal val properties: List<Pair<String, Component>>,
-            ): Component()
-        }
-
-        internal enum class HorizontalAlign { LEFT, CENTER, RIGHT }
-
-        /**
-         * @suppress
-         */
+        @InternalAdaptyApi
         public sealed class Asset {
 
             public class Color internal constructor(
@@ -330,18 +190,19 @@ public object AdaptyUI {
 
             public class Gradient internal constructor(
                 internal val type: Type,
-                private val values: List<Value>,
+                internal val values: List<Value>,
                 internal val points: Points,
             ): Filling.Local() {
 
-                internal val colors: IntArray get() = values.map { it.color.value }.toIntArray()
-                internal val positions: FloatArray get() = values.map { it.p }.toFloatArray()
                 internal enum class Type { LINEAR, RADIAL, CONIC }
 
                 internal class Value(
                     val p: Float,
                     val color: Color,
-                )
+                ) {
+                    operator fun component1() = p
+                    operator fun component2() = color
+                }
 
                 internal class Points(
                     val x0: Float,
@@ -349,10 +210,13 @@ public object AdaptyUI {
                     val x1: Float,
                     val y1: Float,
                 ) {
-                    operator fun component1(): Float = x0
-                    operator fun component2(): Float = y0
-                    operator fun component3(): Float = x1
-                    operator fun component4(): Float = y1
+                    operator fun component1(): Float = x0.asComposeGradientPoint()
+                    operator fun component2(): Float = y0.asComposeGradientPoint()
+                    operator fun component3(): Float = x1.asComposeGradientPoint()
+                    operator fun component4(): Float = y1.asComposeGradientPoint()
+
+                    private fun Float.asComposeGradientPoint() =
+                        if (this == 0f) this else Float.POSITIVE_INFINITY * this
                 }
             }
 
@@ -361,8 +225,7 @@ public object AdaptyUI {
                 internal val resources: List<String>,
                 internal val weight: Int,
                 internal val isItalic: Boolean,
-                internal val size: Float?,
-                internal val horizontalAlign: HorizontalAlign?,
+                internal val size: Float,
                 @ColorInt internal val color: Int?,
             ): Asset()
 
@@ -371,8 +234,8 @@ public object AdaptyUI {
             ): Filling.Local() {
 
                 public sealed class Source {
-                    public class File(internal val file: java.io.File): Source()
-                    public class Base64Str(internal val imageBase64: String?): Source()
+                    public class File internal constructor(internal val file: java.io.File): Source()
+                    public class Base64Str internal constructor(internal val imageBase64: String?): Source()
                 }
 
                 internal enum class Dimension { WIDTH, HEIGHT }
@@ -390,32 +253,77 @@ public object AdaptyUI {
             }
         }
 
-        internal class Localization(
-            val strings: Map<String, Str>,
-            val assets: Map<String, Asset>,
-        ) {
-            class Str(
-                val value: String,
-                val fallback: String?,
-                val hasTags: Boolean,
+        internal class TextItem(
+            val value: RichText,
+            val fallback: RichText?,
+        )
+
+        /**
+         * @suppress
+         */
+        @InternalAdaptyApi
+        public class RichText internal constructor(internal val items: List<Item>) {
+            internal constructor(item: Item): this(listOf(item))
+
+            public sealed class Item(internal val attrs: Attributes?) {
+                public class Text internal constructor(internal val text: String, attrs: Attributes?): Item(attrs)
+                public class Image internal constructor(internal val imageAssetId: String, attrs: Attributes?): Item(attrs)
+                public class Tag internal constructor(internal val tag: String, attrs: Attributes?): Item(attrs)
+            }
+
+            internal class Attributes(
+                val fontAssetId: String?,
+                val size: Float?,
+                val strikethrough: Boolean,
+                val underline: Boolean,
+                val textColorAssetId: String?,
+                val backgroundAssetId: String?,
+                val imageTintAssetId: String?,
             )
         }
 
-        internal fun <T : Asset> getAsset(assetId: String): T? {
-            val localeStr = defaultLocalization
-            return (localizations[localeStr]?.assets?.get(assetId)
-                ?: localizations[defaultLocalization]?.assets?.get(assetId) ?: assets[assetId]) as? T
+        internal class ScreenBundle(
+            val defaultScreen: Screen.Default,
+            val bottomSheets: Map<String, Screen.BottomSheet>,
+            val initialState: Map<String, Any>,
+        )
+
+        /**
+         * @suppress
+         */
+        @InternalAdaptyApi
+        public sealed class Screen {
+            public sealed class Default(
+                internal val background: String,
+                internal open val cover: BoxElement?,
+                internal val content: UIElement,
+                internal val footer: UIElement?,
+                internal val overlay: UIElement?,
+            ): Screen() {
+                public class Basic internal constructor(
+                    background: String,
+                    override val cover: BoxElement,
+                    content: UIElement,
+                    footer: UIElement?,
+                    overlay: UIElement?,
+                ): Default(background, cover, content, footer, overlay)
+                public class Transparent internal constructor(
+                    background: String,
+                    cover: BoxElement?,
+                    content: UIElement,
+                    footer: UIElement?,
+                    overlay: UIElement?,
+                ): Default(background, cover, content, footer, overlay)
+                public class Flat internal constructor(
+                    background: String,
+                    cover: BoxElement?,
+                    content: UIElement,
+                    footer: UIElement?,
+                    overlay: UIElement?,
+                ): Default(background, cover, content, footer, overlay)
+            }
+            public class BottomSheet internal constructor(internal val content: UIElement): Screen()
         }
-
-        internal fun getString(strId: String): Localization.Str? {
-            val localeStr = defaultLocalization
-            return (localizations[localeStr]?.strings?.get(strId)
-                ?: localizations[defaultLocalization]?.strings?.get(strId))
-        }
-
-        internal fun getStyle(styleId: String): Style? = styles[styleId]
-
-        internal fun hasStyle(styleId: String): Boolean = styles[styleId] != null
     }
 
     @JvmStatic
@@ -486,7 +394,48 @@ public object AdaptyUI {
         Dependencies.contribute(
             setOf(
                 ViewConfigurationMapper::class to Dependencies.singleVariantDiObject({
-                    ViewConfigurationMapper()
+                    val commonAttributeMapper = CommonAttributeMapper()
+                    val textAttributeMapper = TextAttributeMapper()
+                    val interactiveAttributeMapper = InteractiveAttributeMapper()
+                    ViewConfigurationMapper(
+                        ViewConfigurationAssetMapper(),
+                        ViewConfigurationTextMapper(),
+                        ViewConfigurationScreenMapper(
+                            UIElementFactory(
+                                mutableListOf(
+                                    BoxElementMapper(commonAttributeMapper),
+                                    ButtonElementMapper(
+                                        interactiveAttributeMapper,
+                                        commonAttributeMapper,
+                                    ),
+                                    ColumnElementMapper(commonAttributeMapper),
+                                    HStackElementMapper(commonAttributeMapper),
+                                    IfElementMapper(commonAttributeMapper),
+                                    ImageElementMapper(commonAttributeMapper),
+                                    PagerElementMapper(
+                                        PagerAttributeMapper(commonAttributeMapper),
+                                        commonAttributeMapper,
+                                    ),
+                                    ReferenceElementMapper(commonAttributeMapper),
+                                    RowElementMapper(commonAttributeMapper),
+                                    SectionElementMapper(commonAttributeMapper),
+                                    SpaceElementMapper(commonAttributeMapper),
+                                    TextElementMapper(textAttributeMapper, commonAttributeMapper),
+                                    TimerElementMapper(
+                                        textAttributeMapper,
+                                        interactiveAttributeMapper,
+                                        commonAttributeMapper,
+                                    ),
+                                    ToggleElementMapper(
+                                        interactiveAttributeMapper,
+                                        commonAttributeMapper,
+                                    ),
+                                    VStackElementMapper(commonAttributeMapper),
+                                    ZStackElementMapper(commonAttributeMapper),
+                                )
+                            )
+                        )
+                    )
                 }),
                 MediaCacheConfigManager::class to Dependencies.singleVariantDiObject({
                     MediaCacheConfigManager()

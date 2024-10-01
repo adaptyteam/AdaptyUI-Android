@@ -6,8 +6,8 @@ import androidx.annotation.RestrictTo
 import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.internal.utils.adaptyError
 import com.adapty.internal.utils.errorCodeFromNetwork
-import com.adapty.ui.internal.LOG_PREFIX
-import com.adapty.ui.internal.log
+import com.adapty.ui.internal.utils.LOG_PREFIX
+import com.adapty.ui.internal.utils.log
 import com.adapty.utils.AdaptyLogLevel.Companion.ERROR
 import com.adapty.utils.AdaptyLogLevel.Companion.VERBOSE
 import java.net.HttpURLConnection
