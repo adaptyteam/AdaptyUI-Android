@@ -26,13 +26,7 @@ internal abstract class BaseUIElementMapper(
             this["width"]?.let { item -> commonAttributeMapper.mapDimSpec(item, DimSpec.Axis.X) },
             this["height"]?.let { item -> commonAttributeMapper.mapDimSpec(item, DimSpec.Axis.Y) },
             this["weight"]?.toFloatOrNull(),
-            this["decorator"]?.let { decorator ->
-                when(decorator) {
-                    is Map<*, *> -> commonAttributeMapper.mapShape(decorator)
-                    is String -> commonAttributeMapper.mapShape(mapOf("background" to decorator, "type" to "rect"))
-                    else -> null
-                }
-            },
+            this["decorator"]?.let(commonAttributeMapper::mapShape),
             this["padding"]?.let(commonAttributeMapper::mapEdgeEntities),
             this["offset"]?.let(commonAttributeMapper::mapOffset),
             (this["visibility"] as? Boolean) ?: true,

@@ -9,7 +9,7 @@ android {
     defaultConfig {
         minSdk 21
         targetSdk 31
-        buildConfigField 'String', 'VERSION_NAME', "\"3.0.0\""
+        buildConfigField 'String', 'VERSION_NAME', "\"3.0.1\""
         buildConfigField 'String', 'BUILDER_VERSION', "\"4_0\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -43,7 +43,7 @@ def composeBom = '2024.09.02'
 
 dependencies {
 
-    compileOnly 'io.adapty:android-sdk:3.0.0'
+    compileOnly 'io.adapty:android-sdk:3.0.2'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'

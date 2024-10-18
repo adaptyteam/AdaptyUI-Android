@@ -180,7 +180,7 @@ internal fun Modifier.marginsOrSkip(margins: EdgeEntities?): Modifier {
         .padding(paddingValues)
 }
 
-private fun Modifier.offsetOrSkip(offset: Offset?): Modifier {
+internal fun Modifier.offsetOrSkip(offset: Offset?): Modifier {
     if (offset == null || offset.consumed)
         return this
     return this.offset(offset.x.dp, offset.y.dp)

@@ -34,7 +34,6 @@ import com.adapty.ui.internal.mapping.element.HStackElementMapper
 import com.adapty.ui.internal.mapping.element.IfElementMapper
 import com.adapty.ui.internal.mapping.element.ImageElementMapper
 import com.adapty.ui.internal.mapping.element.PagerElementMapper
-import com.adapty.ui.internal.mapping.element.ReferenceBundles
 import com.adapty.ui.internal.mapping.element.ReferenceElementMapper
 import com.adapty.ui.internal.mapping.element.RowElementMapper
 import com.adapty.ui.internal.mapping.element.SectionElementMapper
@@ -51,6 +50,7 @@ import com.adapty.ui.internal.mapping.viewconfig.ViewConfigurationScreenMapper
 import com.adapty.ui.internal.mapping.viewconfig.ViewConfigurationTextMapper
 import com.adapty.ui.internal.ui.element.BoxElement
 import com.adapty.ui.internal.ui.element.UIElement
+import com.adapty.ui.internal.utils.ContentWrapper
 import com.adapty.ui.internal.utils.LOG_PREFIX
 import com.adapty.ui.internal.utils.log
 import com.adapty.ui.listeners.AdaptyUiDefaultEventListener
@@ -86,6 +86,8 @@ public object AdaptyUI {
      * Use it to respond to different events happening inside the purchase screen.
      * Also you can extend [AdaptyUiDefaultEventListener] so you don't need to override all the methods.
      *
+     * @param[insets] You can override the default window inset handling by specifying the [AdaptyPaywallInsets].
+     *
      * @param[personalizedOfferResolver] In case you want to indicate whether the price is personalized ([read more](https://developer.android.com/google/play/billing/integrate#personalized-price)),
      * you can implement [AdaptyUiPersonalizedOfferResolver] and pass your own logic
      * that maps [AdaptyPaywallProduct] to `true`, if the price of the product is personalized, otherwise `false`.
@@ -107,6 +109,7 @@ public object AdaptyUI {
         viewConfiguration: LocalizedViewConfiguration,
         products: List<AdaptyPaywallProduct>?,
         eventListener: AdaptyUiEventListener,
+        insets: AdaptyPaywallInsets = AdaptyPaywallInsets.UNSPECIFIED,
         personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver = AdaptyUiPersonalizedOfferResolver.DEFAULT,
         tagResolver: AdaptyUiTagResolver = AdaptyUiTagResolver.DEFAULT,
         timerResolver: AdaptyUiTimerResolver,
@@ -119,6 +122,7 @@ public object AdaptyUI {
                 viewConfiguration,
                 products,
                 eventListener,
+                insets,
                 personalizedOfferResolver,
                 tagResolver,
                 timerResolver,
@@ -296,31 +300,30 @@ public object AdaptyUI {
             public sealed class Default(
                 internal val background: String,
                 internal open val cover: BoxElement?,
-                internal val content: UIElement,
                 internal val footer: UIElement?,
                 internal val overlay: UIElement?,
             ): Screen() {
                 public class Basic internal constructor(
                     background: String,
                     override val cover: BoxElement,
-                    content: UIElement,
+                    internal val contentWrapper: ContentWrapper,
                     footer: UIElement?,
                     overlay: UIElement?,
-                ): Default(background, cover, content, footer, overlay)
+                ): Default(background, cover, footer, overlay)
                 public class Transparent internal constructor(
                     background: String,
                     cover: BoxElement?,
-                    content: UIElement,
+                    internal val content: UIElement,
                     footer: UIElement?,
                     overlay: UIElement?,
-                ): Default(background, cover, content, footer, overlay)
+                ): Default(background, cover, footer, overlay)
                 public class Flat internal constructor(
                     background: String,
                     cover: BoxElement?,
-                    content: UIElement,
+                    internal val contentWrapper: ContentWrapper,
                     footer: UIElement?,
                     overlay: UIElement?,
-                ): Default(background, cover, content, footer, overlay)
+                ): Default(background, cover, footer, overlay)
             }
             public class BottomSheet internal constructor(internal val content: UIElement): Screen()
         }
@@ -433,7 +436,8 @@ public object AdaptyUI {
                                     VStackElementMapper(commonAttributeMapper),
                                     ZStackElementMapper(commonAttributeMapper),
                                 )
-                            )
+                            ),
+                            commonAttributeMapper,
                         )
                     )
                 }),

@@ -2,8 +2,6 @@ package com.adapty.ui.internal.utils
 
 import android.content.Context
 import android.os.Build
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -34,18 +32,18 @@ internal inline fun <reified T> Map<*, *>.getAs(key: String) = this[key] as? T
 
 @Composable
 internal fun getScreenHeightDp(): Float {
-    val systemBars = WindowInsets.systemBars
+    val insets = getInsets()
     return with(LocalDensity.current) {
-        LocalConfiguration.current.screenHeightDp + (systemBars.getTop(this) + systemBars.getBottom(this)).toDp().value
+        LocalConfiguration.current.screenHeightDp + (insets.getTop(this) + insets.getBottom(this)).toDp().value
     }
 }
 
 @Composable
 internal fun getScreenWidthDp(): Float {
-    val systemBars = WindowInsets.systemBars
+    val insets = getInsets()
     return with(LocalDensity.current) {
         val layoutDirection = LocalLayoutDirection.current
-        LocalConfiguration.current.screenWidthDp + (systemBars.getLeft(this, layoutDirection) + systemBars.getRight(this, layoutDirection)).toDp().value
+        LocalConfiguration.current.screenWidthDp + (insets.getLeft(this, layoutDirection) + insets.getRight(this, layoutDirection)).toDp().value
     }
 }
 

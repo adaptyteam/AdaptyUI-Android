@@ -5,16 +5,17 @@ package com.adapty.ui.internal.ui
 import android.app.Activity
 import android.content.Context
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -34,22 +35,29 @@ import com.adapty.ui.internal.ui.element.Action
 import com.adapty.ui.internal.ui.element.SectionElement
 import com.adapty.ui.internal.ui.element.fillModifierWithScopedParams
 import com.adapty.ui.internal.utils.EventCallback
+import com.adapty.ui.internal.utils.InsetWrapper
+import com.adapty.ui.internal.utils.LOG_PREFIX
+import com.adapty.ui.internal.utils.LocalCustomInsets
 import com.adapty.ui.internal.utils.OPENED_ADDITIONAL_SCREEN_KEY
+import com.adapty.ui.internal.utils.getInsets
 import com.adapty.ui.internal.utils.getProductGroupKey
+import com.adapty.ui.internal.utils.log
+import com.adapty.ui.internal.utils.wrap
+import com.adapty.utils.AdaptyLogLevel.Companion.VERBOSE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.Date
-import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AdaptyPaywallInternal(viewModel: PaywallViewModel) {
     val userArgs = viewModel.dataState.value ?: return
     val viewConfig = userArgs.viewConfig
-    val insets = WindowInsets.systemBars
     CompositionLocalProvider(
-        LocalLayoutDirection provides if (viewConfig.isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+        LocalLayoutDirection provides if (viewConfig.isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
+        LocalCustomInsets provides userArgs.userInsets.wrap(),
     ) {
+        val insets = getInsets()
         BoxWithConstraints {
             val density = LocalDensity.current
             val configuration = LocalConfiguration.current
@@ -59,9 +67,25 @@ internal fun AdaptyPaywallInternal(viewModel: PaywallViewModel) {
                 screenHeightPxFromConfig = configuration.screenHeightDp.dp.roundToPx()
                 maxHeightPxFromConstraints = maxHeight.roundToPx()
             }
-            if ((insets.getTop(density) == 0 && insets.getBottom(density) == 0 && abs(screenHeightPxFromConfig - maxHeightPxFromConstraints) > 10))
-                return@BoxWithConstraints
-
+            var loggedNonSkipping by remember { mutableStateOf(false) }
+            if (!insets.isCustom) {
+                val insetTop = insets.getTop(density)
+                val insetBottom = insets.getBottom(density)
+                if ((insetTop == 0 && insetBottom == 0 && maxHeightPxFromConstraints - screenHeightPxFromConfig > 10)) {
+                    log(VERBOSE) { "$LOG_PREFIX skipping ($screenHeightPxFromConfig; $maxHeightPxFromConstraints)" }
+                    return@BoxWithConstraints
+                } else {
+                    if (!loggedNonSkipping) {
+                        log(VERBOSE) { "$LOG_PREFIX non-skipping ($insetTop; $insetBottom; $screenHeightPxFromConfig; $maxHeightPxFromConstraints)" }
+                        loggedNonSkipping = true
+                    }
+                }
+            } else {
+                if (!loggedNonSkipping) {
+                    log(VERBOSE) { "$LOG_PREFIX non-skipping (custom insets: ${(insets as? InsetWrapper.Custom)?.insets}" }
+                    loggedNonSkipping = true
+                }
+            }
             val context = LocalContext.current
             val resolveAssets = { viewModel.assets }
             val resolveText = @Composable { stringId: StringId -> viewModel.resolveText(stringId) }

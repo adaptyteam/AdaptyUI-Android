@@ -170,6 +170,14 @@ internal class CommonAttributeMapper {
         }
     }
 
+    fun mapShape(item: Any): Shape? {
+        return when(item) {
+            is Map<*, *> -> mapShape(item)
+            is String -> mapShape(mapOf("background" to item, "type" to "rect"))
+            else -> null
+        }
+    }
+
     fun mapShape(item: Map<*, *>): Shape {
         val shapeType = (item["type"] as? String).let { type ->
             when (type) {

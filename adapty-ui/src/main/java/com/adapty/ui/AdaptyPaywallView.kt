@@ -2,6 +2,7 @@ package com.adapty.ui
 
 import android.content.Context
 import android.util.AttributeSet
+import android.view.View
 import androidx.annotation.UiThread
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.AbstractComposeView
@@ -66,6 +67,8 @@ public class AdaptyPaywallView @JvmOverloads constructor(
      * Use it to respond to different events happening inside the purchase screen.
      * Also you can extend [AdaptyUiDefaultEventListener] so you don't need to override all the methods.
      *
+     * @param[insets] You can override the default window inset handling by specifying the [AdaptyPaywallInsets].
+     *
      * @param[personalizedOfferResolver] In case you want to indicate whether the price is personalized ([read more](https://developer.android.com/google/play/billing/integrate#personalized-price)),
      * you can implement [AdaptyUiPersonalizedOfferResolver] and pass your own logic
      * that maps [AdaptyPaywallProduct] to `true`, if the price of the product is personalized, otherwise `false`.
@@ -82,23 +85,27 @@ public class AdaptyPaywallView @JvmOverloads constructor(
         viewConfiguration: AdaptyUI.LocalizedViewConfiguration,
         products: List<AdaptyPaywallProduct>?,
         eventListener: AdaptyUiEventListener,
+        insets: AdaptyPaywallInsets = AdaptyPaywallInsets.UNSPECIFIED,
         personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver = AdaptyUiPersonalizedOfferResolver.DEFAULT,
         tagResolver: AdaptyUiTagResolver = AdaptyUiTagResolver.DEFAULT,
         timerResolver: AdaptyUiTimerResolver = AdaptyUiTimerResolver.DEFAULT,
         observerModeHandler: AdaptyUiObserverModeHandler? = null,
     ) {
-        viewModel?.setNewData(
-            UserArgs.create(
-                viewConfiguration,
-                eventListener,
-                personalizedOfferResolver,
-                tagResolver,
-                timerResolver,
-                observerModeHandler,
-                products,
-                ProductLoadingFailureCallback { error -> eventListener.onLoadingProductsFailure(error, context) },
+        runOnceWhenAttached {
+            viewModel?.setNewData(
+                UserArgs.create(
+                    viewConfiguration,
+                    eventListener,
+                    insets,
+                    personalizedOfferResolver,
+                    tagResolver,
+                    timerResolver,
+                    observerModeHandler,
+                    products,
+                    ProductLoadingFailureCallback { error -> eventListener.onLoadingProductsFailure(error, context) },
+                )
             )
-        )
+        }
     }
 
     @Composable
@@ -117,5 +124,22 @@ public class AdaptyPaywallView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         log(VERBOSE) { "$LOG_PREFIX AdaptyPaywallView (${hashCode()}) onDetachedFromWindow" }
         super.onDetachedFromWindow()
+    }
+
+    private fun runOnceWhenAttached(action: () -> Unit) {
+        if (isAttachedToWindow) {
+            action()
+        } else {
+            addOnAttachStateChangeListener(object: OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View?) {
+                    action()
+                    removeOnAttachStateChangeListener(this)
+                }
+
+                override fun onViewDetachedFromWindow(v: View?) {
+                    removeOnAttachStateChangeListener(this)
+                }
+            })
+        }
     }
 }

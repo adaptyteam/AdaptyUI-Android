@@ -15,12 +15,14 @@ import com.adapty.errors.AdaptyErrorCode
 import com.adapty.internal.di.DIObject
 import com.adapty.internal.di.Dependencies
 import com.adapty.internal.di.Dependencies.OBSERVER_MODE
+import com.adapty.internal.domain.models.ProductType
 import com.adapty.internal.utils.CacheRepositoryProxy
 import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.internal.utils.PriceFormatter
-import com.adapty.internal.utils.getOrderedOriginalProductIdMappings
+import com.adapty.internal.utils.extractProducts
 import com.adapty.models.AdaptyPaywall
 import com.adapty.models.AdaptyPaywallProduct
+import com.adapty.ui.AdaptyPaywallInsets
 import com.adapty.ui.AdaptyUI
 import com.adapty.ui.AdaptyUI.LocalizedViewConfiguration.Asset
 import com.adapty.ui.AdaptyUI.LocalizedViewConfiguration.Asset.Image
@@ -163,11 +165,15 @@ internal class PaywallViewModel(
         paywall: AdaptyPaywall,
     ): Map<String, AdaptyPaywallProduct> {
         return if (products.isNotEmpty())
-            getOrderedOriginalProductIdMappings(paywall)
-                .mapNotNull { (id, vendorProductId) ->
-                    products.firstOrNull { it.vendorProductId == vendorProductId }?.let { product ->
-                        id to product
-                    }
+            extractProducts(paywall)
+                .mapNotNull { paywallProduct ->
+                    val adaptyId = paywallProduct.id
+                    val vendorProductId = paywallProduct.vendorProductId
+                    val basePlanId = (paywallProduct.type as? ProductType.Subscription)
+                        ?.subscriptionData?.basePlanId
+                    products
+                        .firstOrNull { product -> product.vendorProductId == vendorProductId && (product.subscriptionDetails?.let { it.basePlanId == basePlanId } ?: true) }
+                        ?.let { product -> adaptyId to product }
                 }
                 .toMap()
         else {
@@ -421,6 +427,7 @@ internal class PaywallViewModelArgs(
 internal class UserArgs(
     val viewConfig: AdaptyUI.LocalizedViewConfiguration,
     val eventListener: AdaptyUiEventListener,
+    val userInsets: AdaptyPaywallInsets,
     val personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver,
     val tagResolver: AdaptyUiTagResolver,
     val timerResolver: AdaptyUiTimerResolver,
@@ -432,6 +439,7 @@ internal class UserArgs(
         fun create(
             viewConfig: AdaptyUI.LocalizedViewConfiguration,
             eventListener: AdaptyUiEventListener,
+            userInsets: AdaptyPaywallInsets,
             personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver,
             tagResolver: AdaptyUiTagResolver,
             timerResolver: AdaptyUiTimerResolver,
@@ -442,6 +450,7 @@ internal class UserArgs(
             UserArgs(
                 viewConfig,
                 eventListener,
+                userInsets,
                 personalizedOfferResolver,
                 tagResolver,
                 timerResolver,

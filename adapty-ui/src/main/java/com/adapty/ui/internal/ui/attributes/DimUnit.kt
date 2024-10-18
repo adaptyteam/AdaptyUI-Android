@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.adapty.internal.utils.InternalAdaptyApi
+import com.adapty.ui.internal.utils.getInsets
 import com.adapty.ui.internal.utils.getScreenHeightDp
 import com.adapty.ui.internal.utils.getScreenWidthDp
 
@@ -20,7 +21,7 @@ internal fun DimUnit.toExactDp(axis: DimSpec.Axis): Dp {
         is DimUnit.SafeArea -> {
             val density = LocalDensity.current
             val layoutDirection = LocalLayoutDirection.current
-            val safeContent = WindowInsets.safeContent
+            val safeContent = getInsets()
             return with(density) {
                 when (this@toExactDp.side) {
                     DimUnit.SafeArea.Side.START -> when (axis) {

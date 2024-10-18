@@ -7,10 +7,10 @@ import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.internal.utils.adaptyError
 import com.adapty.models.AdaptyPaywall
 import com.adapty.ui.AdaptyUI.LocalizedViewConfiguration
-import com.adapty.ui.internal.utils.getProductGroupKey
 import com.adapty.ui.internal.utils.getAs
+import com.adapty.ui.internal.utils.getProductGroupKey
 
-internal typealias JsonObject = Map<String, Any>
+internal typealias JsonObject = Map<String, Any?>
 internal typealias JsonArray = Iterable<JsonObject>
 
 internal class ViewConfigurationMapper(
@@ -56,6 +56,11 @@ internal class ViewConfigurationMapper(
         val screenStateMap = mutableMapOf<String, Any>()
 
         config.getAs<JsonObject>("products")?.getAs<JsonObject>("selected")?.forEach { (k, v) ->
+            if (v == null)
+                throw adaptyError(
+                    message = "styles in ViewConfiguration should not be null",
+                    adaptyErrorCode = AdaptyErrorCode.DECODING_FAILED
+                )
             screenStateMap[getProductGroupKey(k)] = v
         }
 
