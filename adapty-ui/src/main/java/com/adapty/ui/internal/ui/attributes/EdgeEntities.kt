@@ -8,9 +8,9 @@ import androidx.compose.ui.unit.dp
 import com.adapty.internal.utils.InternalAdaptyApi
 
 internal data class EdgeEntities(
-    val left: DimUnit,
+    val start: DimUnit,
     val top: DimUnit,
-    val right: DimUnit,
+    val end: DimUnit,
     val bottom: DimUnit,
 ) {
     constructor(horizontal: DimUnit, vertical: DimUnit): this(horizontal, vertical, horizontal, vertical)
@@ -20,16 +20,15 @@ internal data class EdgeEntities(
 
 @Composable
 internal fun EdgeEntities.toPaddingValues(): PaddingValues {
-    val (left, top, right, bottom) = this
     return PaddingValues(
-        left.toExactDp(DimSpec.Axis.X),
+        start.toExactDp(DimSpec.Axis.X),
         top.toExactDp(DimSpec.Axis.Y),
-        right.toExactDp(DimSpec.Axis.X),
+        end.toExactDp(DimSpec.Axis.X),
         bottom.toExactDp(DimSpec.Axis.Y),
     )
 }
 
-internal val EdgeEntities.horizontalSum @Composable get() = left.toExactDp(DimSpec.Axis.X) + right.toExactDp(
+internal val EdgeEntities.horizontalSum @Composable get() = start.toExactDp(DimSpec.Axis.X) + end.toExactDp(
     DimSpec.Axis.X
 )
 internal val EdgeEntities.verticalSum @Composable get() = top.toExactDp(DimSpec.Axis.Y) + bottom.toExactDp(

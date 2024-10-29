@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
@@ -31,7 +30,6 @@ import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.ui.AdaptyUI.LocalizedViewConfiguration.Asset
 import com.adapty.ui.internal.mapping.element.Assets
 import com.adapty.ui.internal.ui.attributes.DimSpec
-import com.adapty.ui.internal.ui.attributes.DimUnit
 import com.adapty.ui.internal.ui.attributes.EdgeEntities
 import com.adapty.ui.internal.ui.attributes.Offset
 import com.adapty.ui.internal.ui.attributes.horizontalSumOrDefault
@@ -163,20 +161,13 @@ internal fun Modifier.sideDimensionOrSkip(sideDimension: DimSpec?, margins: Edge
 internal fun Modifier.marginsOrSkip(margins: EdgeEntities?): Modifier {
     if (margins == null)
         return this
-    val (left, top, right, bottom) = margins
-    var hasSafePaddings = false
-    val paddingValues = listOf(left, top, right, bottom).mapIndexed { i, dimUnit ->
-        if (dimUnit is DimUnit.SafeArea) {
-            hasSafePaddings = true
-            0.dp
-        } else {
-            dimUnit.toExactDp(if (i % 2 == 0) DimSpec.Axis.X else DimSpec.Axis.Y)
-        }
+    val (start, top, end, bottom) = margins
+    val paddingValues = listOf(start, top, end, bottom).mapIndexed { i, dimUnit ->
+        dimUnit.toExactDp(if (i % 2 == 0) DimSpec.Axis.X else DimSpec.Axis.Y)
     }.let { values ->
         PaddingValues(values[0], values[1], values[2], values[3])
     }
     return this
-        .run { if (hasSafePaddings) safeContentPadding() else this }
         .padding(paddingValues)
 }
 

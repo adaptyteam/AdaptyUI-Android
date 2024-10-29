@@ -5,9 +5,9 @@ package com.adapty.ui.internal.mapping.element
 import com.adapty.errors.AdaptyErrorCode
 import com.adapty.internal.utils.InternalAdaptyApi
 import com.adapty.internal.utils.adaptyError
-import com.adapty.ui.BuildConfig
 import com.adapty.ui.internal.mapping.attributes.CommonAttributeMapper
 import com.adapty.ui.internal.ui.element.UIElement
+import com.adapty.ui.internal.utils.CONFIGURATION_FORMAT_VERSION
 
 internal class IfElementMapper(
     commonAttributeMapper: CommonAttributeMapper,
@@ -21,7 +21,7 @@ internal class IfElementMapper(
         childMapper: ChildMapperShrinkable,
     ): UIElement {
         val key = when {
-            config["platform"] == "android" || config["version"] == BuildConfig.BUILDER_VERSION -> "then"
+            config["platform"] == "android" || config["version"] == CONFIGURATION_FORMAT_VERSION -> "then"
             else -> "else"
         }
         return (config[key] as? Map<*, *>)?.let { item -> childMapper(item, inheritShrink) }

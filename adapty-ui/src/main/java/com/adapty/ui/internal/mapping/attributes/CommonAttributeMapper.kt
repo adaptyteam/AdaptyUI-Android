@@ -103,12 +103,12 @@ internal class CommonAttributeMapper {
         when (item) {
             is Number -> return EdgeEntities(item.toFloat())
             is Map<*, *> -> {
-                val left = item["left"]?.asDimUnit() ?: DimUnit.Exact(0f)
+                val start = item["leading"]?.asDimUnit() ?: DimUnit.Exact(0f)
                 val top = item["top"]?.asDimUnit() ?: DimUnit.Exact(0f)
-                val right = item["right"]?.asDimUnit() ?: DimUnit.Exact(0f)
+                val end = item["trailing"]?.asDimUnit() ?: DimUnit.Exact(0f)
                 val bottom = item["bottom"]?.asDimUnit() ?: DimUnit.Exact(0f)
 
-                return EdgeEntities(left, top, right, bottom)
+                return EdgeEntities(start, top, end, bottom)
             }
             is Collection<*> -> {
                 val values = item.mapIndexedNotNull { i, value ->

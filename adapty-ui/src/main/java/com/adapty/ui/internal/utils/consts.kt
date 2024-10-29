@@ -9,3 +9,4 @@ internal const val NO_SHRINK = 0b0
 internal const val HOUR_MILLIS = 3600 * 1000L
 internal const val LOG_PREFIX = "UI v${com.adapty.ui.BuildConfig.VERSION_NAME}:"
 internal const val LOG_PREFIX_ERROR = "UI v${com.adapty.ui.BuildConfig.VERSION_NAME} error:"
+internal const val CONFIGURATION_FORMAT_VERSION = "4.0.0"

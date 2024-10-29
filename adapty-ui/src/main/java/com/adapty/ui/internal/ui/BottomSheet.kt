@@ -33,4 +33,4 @@ internal fun BottomSheet(
 }
 
 @Composable
-internal fun rememberBottomSheetState() = rememberModalBottomSheetState()
+internal fun rememberBottomSheetState() = rememberModalBottomSheetState(skipPartiallyExpanded = true)

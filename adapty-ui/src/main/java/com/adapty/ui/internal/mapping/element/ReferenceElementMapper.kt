@@ -14,9 +14,9 @@ internal class ReferenceElementMapper(
 ) : BaseUIElementMapper("reference", commonAttributeMapper), UIPlainElementMapper {
     override fun map(config: Map<*, *>, assets: Assets, refBundles: ReferenceBundles): UIElement {
         return ReferenceElement(
-            (config["id"] as? String)?.takeIf { it.isNotEmpty() }
+            (config["element_id"] as? String)?.takeIf { it.isNotEmpty() }
                 ?: throw adaptyError(
-                    message = "id in Reference must not be empty",
+                    message = "element_id in Reference must not be empty",
                     adaptyErrorCode = AdaptyErrorCode.DECODING_FAILED
                 ),
         )

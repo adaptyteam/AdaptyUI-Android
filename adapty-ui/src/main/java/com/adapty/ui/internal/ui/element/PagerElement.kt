@@ -247,8 +247,8 @@ public class PagerElement internal constructor(
     ) {
         val spacing = spacing?.dp ?: 0.dp
 
-        val maxAvailablePageWidth = maxAvailableWidth - (pagePadding?.let { it.left.toExactDp(
-            DimSpec.Axis.X) + it.right.toExactDp(DimSpec.Axis.X) } ?: 0.dp)
+        val maxAvailablePageWidth = maxAvailableWidth - (pagePadding?.let { it.start.toExactDp(
+            DimSpec.Axis.X) + it.end.toExactDp(DimSpec.Axis.X) } ?: 0.dp)
         val maxAvailablePageHeight = maxAvailableHeight - (pagePadding?.let { it.top.toExactDp(
             DimSpec.Axis.Y) + it.bottom.toExactDp(DimSpec.Axis.Y) } ?: 0.dp)
         val pageWidth = when(pageWidth) {
