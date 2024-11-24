@@ -107,12 +107,12 @@ public object AdaptyUI {
     public fun getPaywallView(
         activity: Activity,
         viewConfiguration: LocalizedViewConfiguration,
-        products: List<AdaptyPaywallProduct>?,
+        products: List<AdaptyPaywallProduct>? = null,
         eventListener: AdaptyUiEventListener,
         insets: AdaptyPaywallInsets = AdaptyPaywallInsets.UNSPECIFIED,
         personalizedOfferResolver: AdaptyUiPersonalizedOfferResolver = AdaptyUiPersonalizedOfferResolver.DEFAULT,
         tagResolver: AdaptyUiTagResolver = AdaptyUiTagResolver.DEFAULT,
-        timerResolver: AdaptyUiTimerResolver,
+        timerResolver: AdaptyUiTimerResolver = AdaptyUiTimerResolver.DEFAULT,
         observerModeHandler: AdaptyUiObserverModeHandler? = null,
     ): AdaptyPaywallView {
         return AdaptyPaywallView(activity).apply {
